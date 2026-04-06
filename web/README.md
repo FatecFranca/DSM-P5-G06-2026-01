@@ -230,41 +230,4 @@ No `globals.css`:
 4. Página ativa renderiza dados mock e interações locais (filtros/busca)
 5. Gráficos e tabelas atualizam em memória a partir dos filtros
 
-## Estado atual e próximos passos
 
-### Estado atual
-
-- Frontend funcional para demonstração/admin UI
-- Módulos principais iniciais prontos (dashboard, usuários, glicose, refeições)
-- Sem autenticação real
-- Sem persistência/API real
-
-### Próximos passos recomendados
-
-- Integrar backend (REST/GraphQL) e remover mock local
-- Criar camada de serviços/API (`lib/api/*`)
-- Implementar autenticação e autorização (ex.: NextAuth/JWT)
-- Adicionar páginas faltantes do menu
-- Adicionar testes (unitários e e2e)
-- Padronizar tratamento de loading/error/empty states
-
-## Troubleshooting
-
-### Erro de SWC no Windows
-
-Se aparecer erro como:
-
-`Failed to load SWC binary for win32/x64`
-
-Faça:
-
-```bash
-rm -rf node_modules package-lock.json
-npm install
-```
-
-E prefira Node 20 LTS.
-
----
-
-Se quiser, posso também criar uma versão deste README com **diagramas de arquitetura** (rotas, layout e fluxo de dados) para documentação técnica do time.
