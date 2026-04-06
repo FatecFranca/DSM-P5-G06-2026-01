@@ -1,0 +1,43 @@
+import { FoodItem } from '../types';
+
+export const FOOD_DATABASE: FoodItem[] = [
+  // Bons
+  { id: 'db1', name: 'Frango Grelhado', calories: 165, carbs: 0, protein: 31, fat: 4, category: 'good', portion: '150g' },
+  { id: 'db2', name: 'Peixe Assado', calories: 150, carbs: 0, protein: 28, fat: 4, category: 'good', portion: '150g' },
+  { id: 'db3', name: 'Ovo Cozido', calories: 78, carbs: 1, protein: 6, fat: 5, category: 'good', portion: '1 unidade' },
+  { id: 'db4', name: 'Aveia', calories: 150, carbs: 27, protein: 5, fat: 3, category: 'good', portion: '40g', glycemicIndex: 55 },
+  { id: 'db5', name: 'Pão Integral', calories: 69, carbs: 12, protein: 3, fat: 1, category: 'good', portion: '1 fatia', glycemicIndex: 42 },
+  { id: 'db6', name: 'Arroz Integral', calories: 108, carbs: 23, protein: 2, fat: 1, category: 'good', portion: '1/2 xícara', glycemicIndex: 55 },
+  { id: 'db7', name: 'Salada Verde', calories: 20, carbs: 4, protein: 1, fat: 0, category: 'good', portion: '1 tigela' },
+  { id: 'db8', name: 'Brócolis Cozido', calories: 55, carbs: 11, protein: 4, fat: 1, category: 'good', portion: '100g' },
+  { id: 'db9', name: 'Iogurte Natural', calories: 80, carbs: 8, protein: 6, fat: 2, category: 'good', portion: '150g' },
+  { id: 'db10', name: 'Maçã', calories: 95, carbs: 25, protein: 0, fat: 0, category: 'good', portion: '1 unidade', glycemicIndex: 36 },
+  { id: 'db11', name: 'Castanhas', calories: 185, carbs: 4, protein: 4, fat: 18, category: 'good', portion: '30g' },
+  { id: 'db12', name: 'Lentilha', calories: 116, carbs: 20, protein: 9, fat: 0, category: 'good', portion: '100g', glycemicIndex: 32 },
+  { id: 'db13', name: 'Grão de Bico', calories: 120, carbs: 20, protein: 7, fat: 2, category: 'good', portion: '100g', glycemicIndex: 28 },
+  { id: 'db14', name: 'Batata-doce', calories: 103, carbs: 24, protein: 2, fat: 0, category: 'good', portion: '100g', glycemicIndex: 54 },
+  { id: 'db15', name: 'Abacate', calories: 160, carbs: 9, protein: 2, fat: 15, category: 'good', portion: '100g' },
+  { id: 'db16', name: 'Feijão Preto', calories: 110, carbs: 19, protein: 8, fat: 0, category: 'good', portion: '100g', glycemicIndex: 30 },
+  { id: 'db17', name: 'Queijo Cottage', calories: 98, carbs: 3, protein: 11, fat: 4, category: 'good', portion: '100g' },
+  { id: 'db18', name: 'Salmão', calories: 208, carbs: 0, protein: 20, fat: 13, category: 'good', portion: '100g' },
+  { id: 'db19', name: 'Espinafre', calories: 23, carbs: 4, protein: 3, fat: 0, category: 'good', portion: '100g' },
+  { id: 'db20', name: 'Pepino', calories: 16, carbs: 4, protein: 1, fat: 0, category: 'good', portion: '100g' },
+  // Moderados
+  { id: 'db21', name: 'Banana', calories: 105, carbs: 27, protein: 1, fat: 0, category: 'moderate', portion: '1 unidade', glycemicIndex: 51 },
+  { id: 'db22', name: 'Arroz Branco', calories: 130, carbs: 28, protein: 3, fat: 0, category: 'moderate', portion: '1/2 xícara', glycemicIndex: 72 },
+  { id: 'db23', name: 'Suco Natural', calories: 110, carbs: 26, protein: 2, fat: 0, category: 'moderate', portion: '200ml', glycemicIndex: 57 },
+  { id: 'db24', name: 'Manga', calories: 99, carbs: 25, protein: 1, fat: 0, category: 'moderate', portion: '100g', glycemicIndex: 56 },
+  { id: 'db25', name: 'Tapioca', calories: 115, carbs: 27, protein: 0, fat: 0, category: 'moderate', portion: '50g', glycemicIndex: 70 },
+  { id: 'db26', name: 'Pão de Forma', calories: 80, carbs: 15, protein: 3, fat: 1, category: 'moderate', portion: '1 fatia', glycemicIndex: 75 },
+  { id: 'db27', name: 'Batata Inglesa', calories: 86, carbs: 20, protein: 2, fat: 0, category: 'moderate', portion: '100g', glycemicIndex: 78 },
+  { id: 'db28', name: 'Uva', calories: 69, carbs: 18, protein: 1, fat: 0, category: 'moderate', portion: '100g', glycemicIndex: 59 },
+  // Ruins
+  { id: 'db29', name: 'Refrigerante', calories: 140, carbs: 37, protein: 0, fat: 0, category: 'bad', portion: '350ml', glycemicIndex: 63 },
+  { id: 'db30', name: 'Pizza', calories: 290, carbs: 37, protein: 11, fat: 11, category: 'bad', portion: '1 fatia', glycemicIndex: 80 },
+  { id: 'db31', name: 'Batata Frita', calories: 365, carbs: 48, protein: 4, fat: 17, category: 'bad', portion: '100g', glycemicIndex: 75 },
+  { id: 'db32', name: 'Bolo de Chocolate', calories: 389, carbs: 56, protein: 5, fat: 17, category: 'bad', portion: '100g' },
+  { id: 'db33', name: 'Sorvete', calories: 207, carbs: 27, protein: 4, fat: 10, category: 'bad', portion: '100g', glycemicIndex: 60 },
+  { id: 'db34', name: 'Hamburger', calories: 540, carbs: 40, protein: 28, fat: 29, category: 'bad', portion: '1 unidade', glycemicIndex: 68 },
+  { id: 'db35', name: 'Biscoito Recheado', calories: 478, carbs: 70, protein: 5, fat: 20, category: 'bad', portion: '100g' },
+  { id: 'db36', name: 'Croissant', calories: 406, carbs: 45, protein: 9, fat: 21, category: 'bad', portion: '100g', glycemicIndex: 67 },
+];
