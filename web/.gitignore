@@ -6,6 +6,8 @@ node_modules/
 # Expo
 .expo/
 .next/
+next-env.d.ts   
+.next/types/
 dist/
 web-build/
 expo-env.d.ts
@@ -40,3 +42,15 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+
+# Ignore Next.js build output directories and files
+.next/
+out/
+.next/cache/
+.next/static/
+/out/
+/.next/trace
+.next/analyze
+# Ignore Next.js log files
+.next.log
