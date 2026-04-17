@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, Activity, UtensilsCrossed, BookOpen,
   Pill, Target, BarChart2, Lightbulb, Bell, Settings,
-  Heart, LogOut, Menu, X,
+  Heart, LogOut, Menu, X, HelpCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,7 @@ const navGroups = [
     section: "CONTEÚDO",
     items: [
       { label: "Dicas & Artigos", href: "/tips", icon: Lightbulb },
+      { label: "FAQ", href: "/faq", icon: HelpCircle },
       { label: "Notificações", href: "/notifications", icon: Bell, badge: 2 },
     ],
   },

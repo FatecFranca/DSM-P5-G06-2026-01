@@ -6,7 +6,7 @@ import 'dotenv/config';
 
 console.log('🔄 Conectando ao banco de dados...')
 
-;
+  ;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -208,6 +208,47 @@ O álcool pode tanto **elevar quanto reduzir** a glicose, dependendo do tipo e q
     },
   ];
 
+  // ─── FAQ ────────────────────────────────────────────────────────────────────
+
+  const faqs = [
+    {
+      pergunta: 'O que é diabetes?',
+      resposta: 'Diabetes é uma condição em que o corpo não produz ou não utiliza corretamente a insulina, causando aumento da glicose no sangue.',
+      categoria: 'DIABETES',
+      ordem: 1,
+    },
+    {
+      pergunta: 'Quais são os principais sintomas do diabetes?',
+      resposta: 'Sede excessiva, vontade frequente de urinar, cansaço, perda de peso inexplicável e visão embaçada.',
+      categoria: 'SINTOMAS',
+      ordem: 2,
+    },
+    {
+      pergunta: 'Diabetes tem cura?',
+      resposta: 'Atualmente, o diabetes não tem cura, mas pode ser controlado com alimentação, exercícios e, em alguns casos, medicação.',
+      categoria: 'MEDICACAO',
+      ordem: 3,
+    },
+    {
+      pergunta: 'Quem tem diabetes pode comer açúcar?',
+      resposta: 'Pode, mas com moderação e controle. O ideal é evitar picos de glicose e manter uma dieta equilibrada.',
+      categoria: 'ALIMENTACAO',
+      ordem: 4,
+    },
+    {
+      pergunta: 'O que fazer em caso de hipoglicemia?',
+      resposta: 'Consumir 15g de carboidrato rápido (como suco ou bala), aguardar 15 minutos e medir novamente a glicose.',
+      categoria: 'MONITORAMENTO',
+      ordem: 5,
+    },
+    {
+      pergunta: 'Exercício físico ajuda no controle do diabetes?',
+      resposta: 'Sim. Exercícios aumentam a sensibilidade à insulina e ajudam a reduzir a glicose no sangue.',
+      categoria: 'EXERCICIOS',
+      ordem: 6,
+    },
+  ];
+  
   let criadas = 0;
   for (const dica of dicas) {
     const existente = await prisma.dicas.findFirst({ where: { titulo: dica.titulo } });
@@ -219,6 +260,28 @@ O álcool pode tanto **elevar quanto reduzir** a glicose, dependendo do tipo e q
       console.log(`   ⏭️  Já existe: "${dica.titulo}"`);
     }
   }
+
+  // ─── Inserindo FAQs ─────────────────────────────────────────────────────────
+
+  let faqsCriados = 0;
+
+  for (const faq of faqs) {
+    const existente = await prisma.fAQ.findFirst({
+      where: { pergunta: faq.pergunta },
+    });
+
+    if (!existente) {
+      await prisma.fAQ.create({
+        data: faq as any,
+      });
+      faqsCriados++;
+      console.log(`   ❓ "${faq.pergunta}"`);
+    } else {
+      console.log(`   ⏭️  Já existe FAQ: "${faq.pergunta}"`);
+    }
+  }
+
+  console.log(`\n✅ ${faqsCriados} FAQ(s) criado(s).`);
 
   console.log(`\n✅ ${criadas} dica(s) criada(s).`);
   console.log('\n🎉 Seed concluído!\n');

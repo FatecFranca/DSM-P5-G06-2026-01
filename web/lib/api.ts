@@ -212,3 +212,84 @@ export async function webDeletarDica(id: string) {
     { method: 'DELETE' }
   );
 }
+
+// ─── FAQ ──────────────────────────────────────────────────────────────────────
+
+export type CategoriaFAQ =
+  | 'DIABETES'
+  | 'SINTOMAS'
+  | 'ALIMENTACAO'
+  | 'EXERCICIOS'
+  | 'MEDICACAO'
+  | 'MONITORAMENTO';
+
+export interface ApiFAQ {
+  id: string;
+  pergunta: string;
+  resposta: string;
+  categoria: CategoriaFAQ;
+  ordem: number;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export const CATEGORIA_FAQ_LABEL: Record<CategoriaFAQ, string> = {
+  DIABETES:      'O que é Diabetes?',
+  SINTOMAS:      'Sintomas',
+  ALIMENTACAO:   'Alimentação',
+  EXERCICIOS:    'Exercícios',
+  MEDICACAO:     'Medicação e Tratamento',
+  MONITORAMENTO: 'Monitoramento',
+};
+
+export const CATEGORIA_FAQ_COLOR: Record<CategoriaFAQ, string> = {
+  DIABETES:      '#4CAF82',
+  SINTOMAS:      '#3B8ED0',
+  ALIMENTACAO:   '#F97316',
+  EXERCICIOS:    '#8B5CF6',
+  MEDICACAO:     '#EC4899',
+  MONITORAMENTO: '#14B8A6',
+};
+
+export async function webListarFaq(todos = true) {
+  const res = await apiReq<{ success: boolean; data: ApiFAQ[] }>(
+    `/faq?todos=${todos}`
+  );
+  return res.data;
+}
+
+export async function webCriarFaq(payload: {
+  pergunta: string;
+  resposta: string;
+  categoria: CategoriaFAQ;
+  ordem?: number;
+  ativo?: boolean;
+}) {
+  const res = await apiReq<{ success: boolean; data: ApiFAQ }>(
+    '/faq',
+    { method: 'POST', body: JSON.stringify(payload) }
+  );
+  return res.data;
+}
+
+export async function webAtualizarFaq(id: string, payload: Partial<{
+  pergunta: string;
+  resposta: string;
+  categoria: CategoriaFAQ;
+  ordem: number;
+  ativo: boolean;
+}>) {
+  const res = await apiReq<{ success: boolean; data: ApiFAQ }>(
+    `/faq/${id}`,
+    { method: 'PUT', body: JSON.stringify(payload) }
+  );
+  return res.data;
+}
+
+export async function webDeletarFaq(id: string) {
+  await apiReq<{ success: boolean }>(
+    `/faq/${id}`,
+    { method: 'DELETE' }
+  );
+}
