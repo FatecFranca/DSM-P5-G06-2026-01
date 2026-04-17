@@ -8,6 +8,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  
 }
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
@@ -43,6 +44,15 @@ enum Categoria {
   ALIMENTACAO
   EMERGENCIA
   BEM_ESTAR
+}
+
+enum CategoriaFAQ {
+  DIABETES
+  SINTOMAS
+  ALIMENTACAO
+  EXERCICIOS
+  MEDICACAO
+  MONITORAMENTO
 }
 
 // ─── Models ───────────────────────────────────────────────────────────────────
@@ -97,4 +107,17 @@ model Dicas {
   atualizadoEm  DateTime @updatedAt
 
   @@map("dicas")
+}
+
+model FAQ {
+  id           String       @id @default(uuid())
+  pergunta     String
+  resposta     String
+  categoria    CategoriaFAQ
+  ordem        Int          @default(0)
+  ativo        Boolean      @default(true)
+  criadoEm    DateTime     @default(now())
+  atualizadoEm DateTime    @updatedAt
+
+  @@map("faqs")
 }

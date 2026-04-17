@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Clock, ChevronRight, BookOpen, Star, ArrowLeft } from 'lucide-react-native';
+import { Clock, ChevronRight, BookOpen, Star, ArrowLeft, AlertCircle } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '../../theme';
 import { Card } from '../../components/common/Card';
-import { MOCK_TIPS } from '../../data/mockData';
-import { RootStackParamList } from '../../types';
+import { apiListarDicas, dicaParaTip } from '../../services/api';
+import { Tip, RootStackParamList } from '../../types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -34,9 +34,29 @@ export default function TipsScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const [category, setCategory] = useState('Todos');
+  const [tips, setTips] = useState<Tip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const featured = MOCK_TIPS.filter(t => t.featured);
-  const filtered  = MOCK_TIPS.filter(t => category === 'Todos' || t.category === category);
+  useEffect(() => {
+    loadTips();
+  }, []);
+
+  const loadTips = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await apiListarDicas(1, 100);
+      setTips(result.dados.map(dicaParaTip));
+    } catch (err: any) {
+      setError(err?.message ?? 'Erro ao carregar dicas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const featured = tips.filter(t => t.featured);
+  const filtered = tips.filter(t => category === 'Todos' || t.category === category);
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -55,107 +75,129 @@ export default function TipsScreen() {
         </View>
       </LinearGradient>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Category filter */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catBar} contentContainerStyle={styles.catContent}>
-          {CATEGORIES.map(c => (
-            <TouchableOpacity
-              key={c}
-              style={[styles.catBtn, category === c && styles.catBtnActive]}
-              onPress={() => setCategory(c)}
-            >
-              {c !== 'Todos' && <Text style={styles.catEmoji}>{CAT_EMOJIS[c]}</Text>}
-              <Text style={[styles.catText, category === c && styles.catTextActive]}>{c}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Featured */}
-        {category === 'Todos' && featured.length > 0 && (
-          <View style={styles.featuredSection}>
-            <View style={styles.sectionHeader}>
-              <Star size={16} color={Colors.warning} />
-              <Text style={styles.sectionTitle}>Em Destaque</Text>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredScroll}>
-              {featured.map(tip => (
-                <TouchableOpacity
-                  key={tip.id}
-                  style={styles.featuredCard}
-                  onPress={() => navigation.navigate('TipDetail', { tip })}
-                >
-                  <LinearGradient
-                    colors={[CAT_COLORS[tip.category] || Colors.primary, (CAT_COLORS[tip.category] || Colors.primary) + 'BB']}
-                    style={styles.featuredGradient}
-                  >
-                    <View style={styles.featuredCatTag}>
-                      <Text style={styles.featuredCatText}>{tip.category}</Text>
-                    </View>
-                    <Text style={styles.featuredTitle}>{tip.title}</Text>
-                    <Text style={styles.featuredSummary} numberOfLines={2}>{tip.summary}</Text>
-                    <View style={styles.featuredFooter}>
-                      <Clock size={12} color="rgba(255,255,255,0.8)" />
-                      <Text style={styles.featuredTime}>{tip.readTime} min de leitura</Text>
-                    </View>
-                  </LinearGradient>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* All articles */}
-        <View style={styles.articlesSection}>
-          <View style={styles.sectionHeader}>
-            <BookOpen size={16} color={Colors.secondary} />
-            <Text style={styles.sectionTitle}>
-              {category === 'Todos' ? 'Todos os Artigos' : category}
-            </Text>
-          </View>
-
-          {filtered.map(tip => {
-            const color = CAT_COLORS[tip.category] || Colors.primary;
-            return (
-              <TouchableOpacity
-                key={tip.id}
-                onPress={() => navigation.navigate('TipDetail', { tip })}
-                activeOpacity={0.7}
-              >
-                <Card style={styles.articleCard} padding={14}>
-                  <View style={styles.articleRow}>
-                    <View style={[styles.articleIcon, { backgroundColor: color + '20' }]}>
-                      <Text style={styles.articleEmoji}>{CAT_EMOJIS[tip.category] || '📖'}</Text>
-                    </View>
-                    <View style={styles.articleContent}>
-                      <View style={styles.articleTagRow}>
-                        <View style={[styles.articleTag, { backgroundColor: color + '20' }]}>
-                          <Text style={[styles.articleTagText, { color }]}>{tip.category}</Text>
-                        </View>
-                        {tip.featured && (
-                          <View style={styles.featuredBadge}>
-                            <Star size={10} color={Colors.warning} />
-                            <Text style={styles.featuredBadgeText}>Destaque</Text>
-                          </View>
-                        )}
-                      </View>
-                      <Text style={styles.articleTitle}>{tip.title}</Text>
-                      <Text style={styles.articleSummary} numberOfLines={2}>{tip.summary}</Text>
-                      <View style={styles.articleFooter}>
-                        <Clock size={11} color={Colors.textLight} />
-                        <Text style={styles.articleTime}>{tip.readTime} min</Text>
-                        <Text style={styles.articleDate}>{tip.date.split('-').reverse().join('/')}</Text>
-                      </View>
-                    </View>
-                    <ChevronRight size={16} color={Colors.textLight} />
-                  </View>
-                </Card>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <View style={{ height: 32 }} />
+      {/* Category filter */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catBar} contentContainerStyle={styles.catContent}>
+        {CATEGORIES.map(c => (
+          <TouchableOpacity
+            key={c}
+            style={[styles.catBtn, category === c && styles.catBtnActive]}
+            onPress={() => setCategory(c)}
+          >
+            {c !== 'Todos' && <Text style={styles.catEmoji}>{CAT_EMOJIS[c]}</Text>}
+            <Text style={[styles.catText, category === c && styles.catTextActive]}>{c}</Text>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
+
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Carregando dicas...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <AlertCircle size={40} color={Colors.danger} />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={loadTips}>
+            <Text style={styles.retryText}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Featured */}
+          {category === 'Todos' && featured.length > 0 && (
+            <View style={styles.featuredSection}>
+              <View style={styles.sectionHeader}>
+                <Star size={16} color={Colors.warning} />
+                <Text style={styles.sectionTitle}>Em Destaque</Text>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredScroll}>
+                {featured.map(tip => (
+                  <TouchableOpacity
+                    key={tip.id}
+                    style={styles.featuredCard}
+                    onPress={() => navigation.navigate('TipDetail', { tip })}
+                  >
+                    <LinearGradient
+                      colors={[CAT_COLORS[tip.category] || Colors.primary, (CAT_COLORS[tip.category] || Colors.primary) + 'BB']}
+                      style={styles.featuredGradient}
+                    >
+                      <View style={styles.featuredCatTag}>
+                        <Text style={styles.featuredCatText}>{tip.category}</Text>
+                      </View>
+                      <Text style={styles.featuredTitle}>{tip.title}</Text>
+                      <Text style={styles.featuredSummary} numberOfLines={2}>{tip.summary}</Text>
+                      <View style={styles.featuredFooter}>
+                        <Clock size={12} color="rgba(255,255,255,0.8)" />
+                        <Text style={styles.featuredTime}>{tip.readTime} min de leitura</Text>
+                      </View>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* All articles */}
+          <View style={styles.articlesSection}>
+            <View style={styles.sectionHeader}>
+              <BookOpen size={16} color={Colors.secondary} />
+              <Text style={styles.sectionTitle}>
+                {category === 'Todos' ? 'Todos os Artigos' : category}
+              </Text>
+            </View>
+
+            {filtered.length === 0 ? (
+              <View style={styles.emptyBox}>
+                <BookOpen size={32} color={Colors.textLight} />
+                <Text style={styles.emptyText}>Nenhum artigo encontrado</Text>
+              </View>
+            ) : (
+              filtered.map(tip => {
+                const color = CAT_COLORS[tip.category] || Colors.primary;
+                return (
+                  <TouchableOpacity
+                    key={tip.id}
+                    onPress={() => navigation.navigate('TipDetail', { tip })}
+                    activeOpacity={0.7}
+                  >
+                    <Card style={styles.articleCard} padding={14}>
+                      <View style={styles.articleRow}>
+                        <View style={[styles.articleIcon, { backgroundColor: color + '20' }]}>
+                          <Text style={styles.articleEmoji}>{CAT_EMOJIS[tip.category] || '📖'}</Text>
+                        </View>
+                        <View style={styles.articleContent}>
+                          <View style={styles.articleTagRow}>
+                            <View style={[styles.articleTag, { backgroundColor: color + '20' }]}>
+                              <Text style={[styles.articleTagText, { color }]}>{tip.category}</Text>
+                            </View>
+                            {tip.featured && (
+                              <View style={styles.featuredBadge}>
+                                <Star size={10} color={Colors.warning} />
+                                <Text style={styles.featuredBadgeText}>Destaque</Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text style={styles.articleTitle}>{tip.title}</Text>
+                          <Text style={styles.articleSummary} numberOfLines={2}>{tip.summary}</Text>
+                          <View style={styles.articleFooter}>
+                            <Clock size={11} color={Colors.textLight} />
+                            <Text style={styles.articleTime}>{tip.readTime} min</Text>
+                            <Text style={styles.articleDate}>{tip.date.split('-').reverse().join('/')}</Text>
+                          </View>
+                        </View>
+                        <ChevronRight size={16} color={Colors.textLight} />
+                      </View>
+                    </Card>
+                  </TouchableOpacity>
+                );
+              })
+            )}
+          </View>
+
+          <View style={{ height: 32 }} />
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -172,6 +214,11 @@ const styles = StyleSheet.create({
   catEmoji: { fontSize: 14 },
   catText: { fontSize: FontSize.xs, color: Colors.textSecondary, fontWeight: FontWeight.medium },
   catTextActive: { color: '#fff' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xl, gap: 12 },
+  loadingText: { fontSize: FontSize.sm, color: Colors.textSecondary, marginTop: 8 },
+  errorText: { fontSize: FontSize.sm, color: Colors.danger, textAlign: 'center' },
+  retryBtn: { marginTop: 8, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: Colors.primary, borderRadius: BorderRadius.md },
+  retryText: { color: '#fff', fontWeight: FontWeight.semibold },
   featuredSection: { paddingTop: Spacing.lg, marginBottom: Spacing.md },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: Spacing.lg, marginBottom: Spacing.md },
   sectionTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: Colors.text },
@@ -185,6 +232,8 @@ const styles = StyleSheet.create({
   featuredFooter: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   featuredTime: { color: 'rgba(255,255,255,0.8)', fontSize: FontSize.xs },
   articlesSection: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, gap: 8 },
+  emptyBox: { alignItems: 'center', paddingVertical: 32, gap: 8 },
+  emptyText: { fontSize: FontSize.sm, color: Colors.textLight },
   articleCard: {},
   articleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   articleIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
