@@ -38,6 +38,13 @@ enum Humor {
   PESSIMO
 }
 
+enum Categoria {
+  EXERCICIO
+  ALIMENTACAO
+  EMERGENCIA
+  BEM_ESTAR
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model Usuario {
@@ -76,4 +83,18 @@ model Diario {
   atualizadoEm DateTime @updatedAt
 
   @@map("diarios")
+}
+
+model Dicas {
+  id            String   @id @default(uuid())
+  titulo        String
+  sumario       String
+  conteudo      String
+  categoria     Categoria
+  tempoLeitura  Int
+  destaque      Boolean  @default(false)
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+
+  @@map("dicas")
 }

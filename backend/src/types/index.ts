@@ -2,6 +2,7 @@ export type TipoDiabetes = 'NENHUM' | 'TIPO1' | 'TIPO2' | 'GESTACIONAL' | 'PRE_D
 export type StatusUsuario = 'ATIVO' | 'INATIVO';
 export type Perfil = 'USUARIO' | 'ADMIN';
 export type Humor = 'OTIMO' | 'BOM' | 'OK' | 'MAL' | 'PESSIMO';
+export type Categoria = 'EXERCICIO' | 'ALIMENTACAO' | 'EMERGENCIA' | 'BEM_ESTAR';
 
 export interface JwtPayload {
   id: string;
