@@ -48,7 +48,7 @@ export const dicasController = {
         'EXERCICIO',
         'ALIMENTACAO',
         'EMERGENCIA',
-        'BEMESTAR',
+        'BEM_ESTAR',
       ];
 
       if (categoria && !categoriasValidas.includes(categoria)) {
