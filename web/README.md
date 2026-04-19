@@ -1,233 +1,223 @@
-# DiabetesCare Admin Web
+# DiabetesCare — Painel Administrativo Web
 
-Painel administrativo web do ecossistema **DiabetesCare**, construído com Next.js para monitorar usuários, glicose, alimentação e indicadores de saúde.
+Painel web do ecossistema **DiabetesCare**, construído com Next.js 14 para monitoramento clínico de pacientes com diabetes — visualização de glicose, alimentação, usuários e indicadores de saúde.
 
-## Visão Geral
-
-Este frontend é um painel para acompanhamento operacional e clínico com foco em:
-
-- Visualização rápida de indicadores (KPIs)
-- Acompanhamento de leituras de glicose
-- Gestão de usuários
-- Visualização de dados alimentares
-- Navegação preparada para novos módulos (diário, metas, notificações, relatórios etc.)
-
-> Atualmente, o projeto usa **dados mockados** em `lib/mock-data.ts` (sem backend integrado).
+---
 
 ## Stack e Tecnologias
 
-- **Framework:** Next.js `14.2.5` (App Router)
+- **Framework:** Next.js 14.2.5 (App Router)
 - **UI:** React 18 + Tailwind CSS
 - **Linguagem:** TypeScript (strict)
-- **Ícones:** `lucide-react`
-- **Gráficos:** `recharts`
-- **Helpers de classe CSS:** `clsx` + `tailwind-merge`
-
-## Bibliotecas Utilizadas
+- **Ícones:** lucide-react
+- **Gráficos:** Recharts
+- **Helpers CSS:** clsx + tailwind-merge
 
 ### Dependências principais
 
-- `next`
-- `react`, `react-dom`
-- `tailwindcss`, `postcss`, `autoprefixer`
-- `lucide-react`
-- `recharts`
-- `clsx`
-- `tailwind-merge`
+| Pacote | Função |
+|--------|--------|
+| `next` | Framework React com SSR/SSG |
+| `react`, `react-dom` | Biblioteca de UI |
+| `tailwindcss` | Estilização utilitária |
+| `lucide-react` | Ícones |
+| `recharts` | Gráficos e visualizações |
+| `clsx`, `tailwind-merge` | Merge de classes CSS |
 
-### Dev dependencies
+---
 
-- `typescript`
-- `@types/node`, `@types/react`, `@types/react-dom`
-- `eslint`
-- `eslint-config-next`
+## Pré-requisitos
 
-## Como rodar o frontend (`web/`)
+- Node.js 20 LTS ou superior
+- npm 10+
 
-### 1) Instalar dependências
+---
+
+## Como Rodar
+
+### Desenvolvimento
 
 ```bash
+cd web
 npm install
-```
-
-### 2) Ambiente recomendado
-
-- **Node.js 20 LTS** (recomendado para estabilidade com Next 14)
-
-### 3) Iniciar em desenvolvimento
-
-```bash
 npm run dev
 ```
 
-O projeto sobe em:
+Acesse: `http://localhost:3001`
 
-- [http://localhost:3001](http://localhost:3001)
-
-### 4) Build de produção
+### Produção
 
 ```bash
 npm run build
 npm run start
 ```
 
-## Scripts
+---
 
-- `npm run dev` — sobe o servidor Next na porta `3001`
-- `npm run build` — gera build de produção
-- `npm run start` — inicia build em produção na porta `3001`
-- `npm run lint` — executa lint do projeto
+## Scripts Disponíveis
+
+| Script | Descrição |
+|--------|-----------|
+| `npm run dev` | Servidor Next.js na porta 3001 (hot reload) |
+| `npm run build` | Gera build otimizado para produção |
+| `npm run start` | Inicia o build de produção na porta 3001 |
+| `npm run lint` | Executa ESLint no projeto |
+
+---
+
+## Telas Implementadas
+
+### Dashboard (`/dashboard`)
+
+Resumo executivo com visão geral da plataforma:
+
+- Cards de KPI (total de usuários, glicose média, alertas ativos, adesão)
+- Gráfico de tendência glicêmica (área com mínimo, média e máximo)
+- Alertas recentes
+- Distribuição de glicemia e tipos de diabetes
+- Calorias semanais
+- Últimas leituras e usuários ativos
+
+### Usuários (`/users`)
+
+Gestão de pacientes:
+
+- KPIs de base de usuários (ativos, inativos, novos)
+- Busca por nome ou e-mail
+- Filtro por status (todos / ativos / inativos)
+- Tabela com tipo de diabetes, HbA1c, glicose média, adesão e status
+
+### Glicose (`/glucose`)
+
+Monitoramento glicêmico:
+
+- KPIs de desempenho (no alvo, acima, abaixo da meta)
+- Gráfico de evolução com faixas de referência
+- Busca por data, valor, contexto e observações
+- Filtro por status (normal / alto / muito alto / baixo)
+- Tabela de leituras com contexto e status visual
+
+### Alimentação (`/meals`)
+
+Análise alimentar:
+
+- KPIs nutricionais (calorias médias, carboidratos, proteínas, gorduras)
+- Gráfico de calorias por dia da semana
+- Progresso de macronutrientes
+- Busca textual e filtro por tipo de refeição
+- Lista detalhada de refeições e alimentos
+
+---
+
+## Rotas Planejadas (em desenvolvimento)
+
+As rotas abaixo já estão na Sidebar aguardando implementação:
+
+- `/journal` — Diário emocional dos pacientes
+- `/medications` — Acompanhamento de medicações
+- `/goals` — Metas de saúde
+- `/tips` — Gerenciamento de dicas educativas
+- `/notifications` — Central de notificações
+- `/reports` — Relatórios analíticos
+- `/settings` — Configurações do sistema
+
+---
 
 ## Estrutura de Pastas
 
-```text
+```
 web/
   app/
-    layout.tsx                 # Layout raiz + metadata + globals.css
-    page.tsx                   # Redirect para /dashboard
+    layout.tsx                  # Layout raiz + fonte Inter + globals.css
+    page.tsx                    # Redireciona para /dashboard
+    login/
+      page.tsx                  # Tela de autenticação
     (admin)/
-      layout.tsx               # Layout administrativo (Sidebar + Header + main)
-      dashboard/page.tsx       # Tela principal com KPIs, alertas e gráficos
-      users/page.tsx           # Gestão de usuários
-      glucose/page.tsx         # Monitoramento de glicose
-      meals/page.tsx           # Gestão alimentar
+      layout.tsx                # Shell administrativo (Sidebar + Header + main)
+      dashboard/page.tsx        # Dashboard principal
+      users/page.tsx            # Gestão de usuários
+      glucose/page.tsx          # Monitoramento de glicose
+      meals/page.tsx            # Análise alimentar
+      journal/page.tsx
+      medications/page.tsx
+      goals/page.tsx
+      tips/page.tsx
+      notifications/page.tsx
+      reports/page.tsx
+      settings/page.tsx
   components/
     layout/
-      Sidebar.tsx              # Menu lateral (desktop/mobile)
-      Header.tsx               # Cabeçalho com contexto por rota
+      Sidebar.tsx               # Navegação lateral (desktop + mobile)
+      Header.tsx                # Cabeçalho dinâmico por rota
   lib/
-    mock-data.ts               # Tipos e dados mockados de domínio
-    utils.ts                   # Formatação, labels e helpers visuais
-  app/globals.css              # Estilos globais + fonte Inter
-  tailwind.config.ts           # Tema e extensão de cores
+    mock-data.ts                # Tipos de domínio e dados mockados
+    utils.ts                    # Formatadores, labels, cores e helpers
+  app/globals.css               # Estilos globais + fonte + scrollbar
+  tailwind.config.ts            # Tema estendido com paleta própria
   tsconfig.json
   package.json
 ```
 
-## Arquitetura de Navegação
+---
 
-### Roteamento
+## Arquitetura de Layout
 
-- `app/page.tsx` redireciona para `/dashboard`
-- `app/(admin)/layout.tsx` aplica o shell administrativo para as páginas internas
+### Fluxo de navegação
 
-### Layout Administrativo
+1. Usuário acessa `/` → redireciona para `/dashboard`
+2. `app/(admin)/layout.tsx` aplica o shell com **Sidebar + Header**
+3. A página ativa renderiza e filtra os dados locais
 
-O shell administrativo é composto por:
+### Sidebar (`components/layout/Sidebar.tsx`)
 
-- **Sidebar (`components/layout/Sidebar.tsx`)**
-  - Navegação por grupos (Visão Geral, Gestão, Conteúdo, Sistema)
-  - Responsivo com versão mobile (menu hambúrguer + overlay)
-- **Header (`components/layout/Header.tsx`)**
-  - Título/subtítulo dinâmicos por rota
-  - Campo de busca visual
-  - Notificações e avatar
+- Responsiva: versão desktop fixa + mobile com overlay e hambúrguer
+- Agrupamento de links: Visão Geral · Gestão · Conteúdo · Sistema
+- Destaca a rota ativa automaticamente
 
-## Telas Implementadas
+### Header (`components/layout/Header.tsx`)
 
-### 1) Dashboard (`/dashboard`)
+- Título e subtítulo dinâmicos de acordo com a rota atual
+- Campo de busca visual
+- Ícone de notificações e avatar do usuário
 
-Resumo executivo com:
+---
 
-- Banner de boas-vindas
-- Cards de KPI
-- Tendência de glicose (área com min/média/máx)
-- Alertas recentes
-- Distribuições (glicemia e tipos de diabetes)
-- Calorias semanais
-- Listas de últimas leituras e usuários ativos
+## Sistema de Dados
 
-**Dados usados:** `MOCK_USERS`, `MOCK_GLUCOSE`, `GLUCOSE_TREND`, `GLUCOSE_DISTRIBUTION`, `DIABETES_TYPE_DISTRIBUTION`, `WEEKLY_MEALS_CALORIES`.
+> Atualmente o projeto usa **dados mockados** em `lib/mock-data.ts`. Sem integração com o backend.
 
-### 2) Usuários (`/users`)
+### Tipos de domínio disponíveis
 
-Gestão de pacientes com:
+`MockUser` · `GlucoseReading` · `Meal` · `DiaryEntry` · `Medication` · `Goal` · `Notification` · `Tip`
 
-- KPIs de base de usuários
-- Busca por nome/email
-- Filtro por status (`all`, `active`, `inactive`)
-- Tabela com tipo de diabetes, HbA1c, glicose média, aderência e status
-- Cards de resumo de usuários
+### Séries para gráficos
 
-**Dados usados:** `MOCK_USERS`.
+`GLUCOSE_TREND` · `GLUCOSE_DISTRIBUTION` · `DIABETES_TYPE_DISTRIBUTION` · `WEEKLY_MEALS_CALORIES`
 
-### 3) Glicose (`/glucose`)
+### Helpers em `lib/utils.ts`
 
-Monitoramento glicêmico com:
+- `getGlucoseStatusLabel` / `getGlucoseStatusColor` — status glicêmico
+- `getDiabetesTypeLabel` — tipo de diabetes
+- `formatDate` / `formatDateTime` — formatação de datas
+- `calculateBMI` — cálculo de IMC
+- `cn` — merge de classes Tailwind (clsx + tailwind-merge)
 
-- KPIs de desempenho glicêmico
-- Gráfico de evolução (média/mín/máx + faixas de referência)
-- Busca por data, valor, contexto e observações
-- Filtro por status (`all`, `normal`, `high`, `very_high`, `low`)
-- Tabela de leituras com contexto e status visual
+---
 
-**Dados usados:** `MOCK_GLUCOSE`, `GLUCOSE_TREND`.
+## Design System
 
-### 4) Alimentação (`/meals`)
+### Paleta personalizada (`tailwind.config.ts`)
 
-Gestão alimentar com:
+| Token | Uso |
+|-------|-----|
+| `primary` | Ações principais e destaque |
+| `secondary` | Elementos secundários |
+| `success` | Glicose no alvo, status positivo |
+| `warning` | Alertas e atenção |
+| `danger` | Erros e valores críticos |
+| `purple`, `orange`, `teal`, `pink` | Gráficos e categorias |
+| `background`, `card` | Superfícies da UI |
 
-- KPIs nutricionais
-- Gráfico de calorias por dia
-- Progresso de macronutrientes (carboidratos, proteínas, gorduras, calorias)
-- Busca textual
-- Filtro por tipo de refeição
-- Lista detalhada de refeições e alimentos
+### Fonte
 
-**Dados usados:** `MOCK_MEALS`, `WEEKLY_MEALS_CALORIES`.
-
-## Rotas do menu ainda não implementadas
-
-A Sidebar já referencia rotas que ainda não têm página criada:
-
-- `/journal`
-- `/medications`
-- `/goals`
-- `/tips`
-- `/notifications`
-- `/reports`
-- `/settings`
-
-Isso facilita a evolução incremental do painel, mantendo a navegação planejada.
-
-## Sistema de Dados (Mock)
-
-Todo o domínio está centralizado em `lib/mock-data.ts`, com:
-
-- Tipos de domínio (usuários, glicose, alimentação, diário, medicamentos, metas, notificações, dicas)
-- Dados mock para prototipação
-- Séries agregadas para gráficos (`GLUCOSE_TREND`, `WEEKLY_MEALS_CALORIES`, etc.)
-
-### Helpers utilitários
-
-Em `lib/utils.ts` existem funções para:
-
-- Labels de status/tipos
-- Cores por estado
-- Formatação de data
-- Cálculo de IMC
-- Função `cn` para merge de classes Tailwind
-
-## Design System (Tailwind)
-
-O tema foi estendido em `tailwind.config.ts` com paleta própria:
-
-- `primary`, `secondary`, `success`, `warning`, `danger`
-- `purple`, `orange`, `teal`, `pink`
-- `background`, `card`
-
-No `globals.css`:
-
-- Fonte `Inter`
-- Reset básico de box model
-- Estilo de scrollbar customizado
-
-## Como o frontend funciona (fluxo)
-
-1. Usuário acessa `/`
-2. App redireciona para `/dashboard`
-3. `layout (admin)` carrega Sidebar + Header
-4. Página ativa renderiza dados mock e interações locais (filtros/busca)
-5. Gráficos e tabelas atualizam em memória a partir dos filtros
-
-
+`Inter` (Google Fonts) — carregada via `globals.css`

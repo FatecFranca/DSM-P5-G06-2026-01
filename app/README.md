@@ -1,248 +1,209 @@
-# DiabetesCare App (Mobile)
+# DiabetesCare — Aplicativo Mobile
 
-Aplicativo mobile do **DiabetesCare** construído com Expo + React Native, com foco em acompanhamento diário de diabetes: glicose, alimentação, diário emocional, hidratação, medicações, metas e conteúdo educativo.
-
-## Visão Geral
-
-O app é organizado em:
-
-- **Onboarding** inicial
-- **Navegação por abas** (Início, Glicose, Alimentos, Diário, Mais)
-- **Fluxos complementares em Stack** (cadastros, detalhes e telas utilitárias)
-- **Estado global** via `AppContext`
-- **Dados mockados locais** para prototipação (`src/data/mockData.ts`)
-
-> Atualmente, o app funciona sem backend externo: os dados são mantidos em memória durante a sessão.
+Aplicativo mobile do ecossistema **DiabetesCare**, construído com Expo + React Native para acompanhamento diário de diabetes: glicose, alimentação, diário emocional, hidratação, medicações, metas e conteúdo educativo.
 
 ---
 
 ## Stack e Tecnologias
 
-- **Framework mobile:** Expo SDK `54`
-- **UI:** React Native `0.81.5`
+- **Framework:** Expo SDK 54
+- **UI:** React Native 0.81.5
 - **Linguagem:** TypeScript
-- **Navegação:** React Navigation (`native-stack` + `bottom-tabs`)
-- **Safe area:** `react-native-safe-area-context`
-- **Ícones:** `lucide-react-native`
-- **Gradientes:** `expo-linear-gradient`
-- **SVG/Charts:** `react-native-svg` + componente gráfico customizado
-- **Status bar:** `expo-status-bar`
+- **Navegação:** React Navigation (native-stack + bottom-tabs)
+- **Ícones:** lucide-react-native
+- **Gradientes:** expo-linear-gradient
+- **Gráficos:** react-native-svg (componente customizado)
+- **Estado global:** AppContext (React Context API)
+- **Persistência local:** @react-native-async-storage/async-storage
 
 ### Dependências principais
 
-- `expo`
-- `react`, `react-native`
-- `@react-navigation/native`
-- `@react-navigation/native-stack`
-- `@react-navigation/bottom-tabs`
-- `react-native-gesture-handler`
-- `react-native-safe-area-context`
-- `react-native-screens`
-- `react-native-svg`
-- `lucide-react-native`
-- `expo-linear-gradient`
-- `@react-native-async-storage/async-storage` (instalado)
-- `zustand` (instalado, não é o estado principal atual)
+| Pacote | Função |
+|--------|--------|
+| `expo` | SDK e ferramentas de desenvolvimento |
+| `react-native` | Framework mobile |
+| `@react-navigation/native` | Navegação entre telas |
+| `@react-navigation/native-stack` | Navegação em pilha |
+| `@react-navigation/bottom-tabs` | Navegação por abas |
+| `react-native-gesture-handler` | Suporte a gestos |
+| `react-native-safe-area-context` | Safe areas iOS/Android |
+| `react-native-screens` | Otimização de telas nativas |
+| `react-native-svg` | Renderização de gráficos |
+| `lucide-react-native` | Ícones |
+| `expo-linear-gradient` | Gradientes |
+
+---
+
+## Pré-requisitos
+
+- Node.js 20+
+- npm 10+
+- **Expo Go** instalado no celular (Android ou iOS) — ou emulador configurado
 
 ---
 
 ## Como Executar
 
-Dentro da pasta `app/`:
-
 ```bash
+cd app
 npm install
 npm run start
 ```
 
 Scripts disponíveis:
 
-- `npm run start` — inicia Expo
-- `npm run android` — abre no Android
-- `npm run ios` — abre no iOS
-- `npm run web` — roda versão web via Expo
+| Script | Descrição |
+|--------|-----------|
+| `npm run start` | Inicia o servidor Expo (Expo Go via QR code) |
+| `npm run android` | Abre no emulador Android |
+| `npm run ios` | Abre no simulador iOS |
+| `npm run web` | Roda versão web via Expo |
 
 ---
 
 ## Arquitetura de Navegação
 
-### Entrada
+### Estrutura em camadas
 
-Arquivo: `App.tsx`
-
-Fluxo de providers:
-
-1. `SafeAreaProvider`
-2. `AppProvider` (contexto global)
-3. `AppNavigator`
-
-### Navegador raiz (Stack)
-
-Arquivo: `src/navigation/AppNavigator.tsx`
-
-Rotas principais do stack:
-
-- `Onboarding` (aparece se `onboarded === false`)
-- `Main` (tabs)
-- `AddGlucose`
-- `AddFood`
-- `AddJournal`
-- `DiagnosisDetail`
-- `TipDetail`
-- `EditProfile`
-- `Profile`
-- `Reports`
-- `Settings`
-- `Notifications`
-- `Water`
-- `Medications`
-- `Goals`
-- `FAQ`
-- `Diagnosis`
-- `Tips`
-
-### Navegação por abas
-
-Arquivo: `src/navigation/TabNavigator.tsx`
-
-Abas:
-
-- `HomeTab` (Início)
-- `GlucoseTab` (Glicose)
-- `FoodTab` (Alimentos)
-- `JournalTab` (Diário)
-- `MoreTab` (Mais)
-
-Possui **tab bar customizada** com badge de notificações no item "Mais".
+```
+App.tsx
+  └── SafeAreaProvider
+        └── AppProvider (estado global)
+              └── AppNavigator (root stack)
+                    ├── OnboardingScreen (só na primeira execução)
+                    ├── TabNavigator (abas principais)
+                    │     ├── HomeTab
+                    │     ├── GlucoseTab
+                    │     ├── FoodTab
+                    │     ├── JournalTab
+                    │     └── MoreTab
+                    └── Screens de detalhe/cadastro (stack)
+                          ├── AddGlucose, AddFood, AddJournal
+                          ├── DiagnosisScreen, DiagnosisDetailScreen
+                          ├── TipsScreen, TipDetailScreen
+                          ├── ProfileScreen, EditProfileScreen
+                          ├── WaterScreen, MedicationsScreen
+                          ├── GoalsScreen, ReportsScreen
+                          ├── NotificationsScreen, SettingsScreen
+                          └── FAQScreen
+```
 
 ---
 
-## Telas e Módulos
+## Telas e Funcionalidades
 
-## Abas principais
+### Abas Principais
 
-### 1) Início (`HomeScreen`)
-
-- Painel consolidado do dia
-- Status glicêmico e últimos registros
-- Resumo de alimentação, hidratação, medicações e metas
+#### Início (`HomeScreen`)
+- Painel diário consolidado
+- Status glicêmico atual e últimas leituras
+- Resumo de alimentação, hidratação, medicações e metas do dia
 - Atalhos rápidos para ações comuns
 - Banner com dica do dia
 
-### 2) Glicose (`GlucoseScreen`)
+#### Glicose (`GlucoseScreen`)
+- Estatísticas: glicose média, percentual no alvo / acima / abaixo
+- Gráfico de evolução por período
+- Filtros: dia, semana, mês
+- Histórico de leituras com contexto e status visual
+- Exclusão de registros
+- Acesso à tela de nova leitura
 
-- Estatísticas de glicose (média, no alvo, acima, abaixo)
-- Gráfico de evolução
-- Filtros por período
-- Lista de leituras com status e exclusão
-- Acesso para registrar nova leitura
-
-### 3) Alimentação (`FoodDiaryScreen`)
-
-- Diário alimentar por data (hoje/ontem/anteontem)
-- Resumo de calorias/macros
-- Refeições por tipo (café/almoço/jantar/lanche)
-- Cadastro e remoção de refeições
+#### Alimentação (`FoodDiaryScreen`)
+- Seletor de data (hoje / ontem / anteontem)
+- Resumo de calorias e macronutrientes do dia
+- Refeições organizadas por tipo: café da manhã, almoço, jantar, lanche
 - Indicador de carga glicêmica diária
+- Adição e remoção de refeições
 
-### 4) Diário (`JournalScreen`)
-
+#### Diário (`JournalScreen`)
 - Registros emocionais e clínicos
-- Filtro por humor
-- Lista de entradas com sintomas/tags
+- Filtro por humor (ótimo / bom / ok / mal / péssimo)
+- Lista de entradas com sintomas e tags
 - Criação e exclusão de registros
 
-### 5) Mais (`MoreScreen`)
+#### Mais (`MoreScreen`)
+Hub com acesso a todos os módulos adicionais:
+- Hidratação · Medicações · Metas · Relatórios
+- Pré-diagnóstico · Dicas & Artigos · FAQ
+- Perfil · Notificações · Configurações
 
-Hub com acesso para:
+---
 
-- Hidratação
-- Medicações
-- Metas
-- Relatórios
-- Pré-diagnóstico
-- Dicas & Artigos
-- FAQ
-- Perfil
-- Notificações
-- Configurações
+### Telas de Cadastro e Detalhe
 
-## Telas complementares (Stack)
-
-- **Onboarding**
-  - `OnboardingScreen`
-- **Glicose**
-  - `AddGlucoseScreen`
-- **Alimentação**
-  - `AddFoodScreen`
-- **Diário**
-  - `AddJournalScreen`
-- **Pré-diagnóstico**
-  - `DiagnosisScreen`
-  - `DiagnosisDetailScreen`
-- **Conteúdo educativo**
-  - `TipsScreen`
-  - `TipDetailScreen`
-- **Perfil**
-  - `ProfileScreen`
-  - `EditProfileScreen`
-- **Saúde e suporte**
-  - `WaterScreen`
-  - `MedicationsScreen`
-  - `GoalsScreen`
-  - `ReportsScreen`
-  - `NotificationsScreen`
-  - `SettingsScreen`
-  - `FAQScreen`
+| Tela | Função |
+|------|--------|
+| `AddGlucoseScreen` | Registrar nova leitura de glicose |
+| `AddFoodScreen` | Adicionar refeição ao diário alimentar |
+| `AddJournalScreen` | Criar entrada no diário emocional |
+| `DiagnosisScreen` | Questionário de pré-diagnóstico |
+| `DiagnosisDetailScreen` | Resultado detalhado do pré-diagnóstico |
+| `TipsScreen` | Lista de dicas educativas por categoria |
+| `TipDetailScreen` | Conteúdo completo de uma dica |
+| `ProfileScreen` | Perfil do usuário |
+| `EditProfileScreen` | Editar dados pessoais e clínicos |
+| `WaterScreen` | Controle de ingestão hídrica |
+| `MedicationsScreen` | Lista e controle de medicamentos |
+| `GoalsScreen` | Definição e acompanhamento de metas |
+| `ReportsScreen` | Relatórios consolidados de saúde |
+| `NotificationsScreen` | Central de notificações |
+| `SettingsScreen` | Configurações do aplicativo |
+| `FAQScreen` | Perguntas frequentes |
 
 ---
 
 ## Gerenciamento de Estado
 
-Arquivo: `src/context/AppContext.tsx`
+Arquivo: [src/context/AppContext.tsx](src/context/AppContext.tsx)
 
-O `AppContext` centraliza:
+O `AppContext` centraliza todos os dados da sessão:
 
-- usuário
-- leituras de glicose
-- refeições
-- diário
-- notificações
-- medicações
-- água
-- metas
-- exercícios
-- sono
-- configurações
-- status de onboarding
+| Estado | Tipo |
+|--------|------|
+| `user` | Perfil do usuário |
+| `glucoseReadings` | Leituras de glicose |
+| `meals` | Refeições registradas |
+| `journals` | Entradas do diário |
+| `notifications` | Notificações do sistema |
+| `medications` | Lista de medicamentos |
+| `water` | Registros de hidratação |
+| `goals` | Metas de saúde |
+| `exercises` | Atividades físicas |
+| `sleep` | Registros de sono |
+| `settings` | Configurações do app |
+| `onboarded` | Status de onboarding |
 
-### Ações principais expostas
+### Ações disponíveis
 
-- `addGlucoseReading`, `deleteGlucoseReading`
-- `addMeal`, `deleteMeal`
-- `addJournal`, `deleteJournal`
-- `markNotificationRead`, `markAllNotificationsRead`
-- `toggleMedication`
-- `addWater`, `getTodayWater`
-- `updateSettings`, `updateUser`
-- `completeOnboarding`
-- `updateGoal`, `addExercise`
+```
+addGlucoseReading / deleteGlucoseReading
+addMeal / deleteMeal
+addJournal / deleteJournal
+toggleMedication
+addWater / getTodayWater
+updateGoal / addExercise
+markNotificationRead / markAllNotificationsRead
+updateUser / updateSettings
+completeOnboarding
+```
 
 ---
 
 ## Estrutura de Pastas
 
-```text
+```
 app/
-  App.tsx
-  app.json
-  index.ts
+  App.tsx                     # Entry point — providers + AppNavigator
+  app.json                    # Configuração Expo
+  index.ts                    # Registro do componente raiz
   src/
     navigation/
-      AppNavigator.tsx
-      TabNavigator.tsx
+      AppNavigator.tsx        # Root stack (onboarding + tabs + modais)
+      TabNavigator.tsx        # Tab bar customizada com badge
     context/
-      AppContext.tsx
+      AppContext.tsx          # Estado global da aplicação
+      AuthContext.tsx         # Estado de autenticação
     screens/
       Onboarding/
       Home/
@@ -260,101 +221,68 @@ app/
       Diagnosis/
       Tips/
       FAQ/
+      Auth/
     components/
-      common/
+      common/                 # Button, Card, ScreenHeader, ProgressBar...
       charts/
+        GlucoseChart.tsx      # Gráfico SVG de evolução glicêmica
     data/
-      mockData.ts
-      foodDatabase.ts
-      diagnosisData.ts
-      faqData.ts
+      mockData.ts             # Dados mockados da sessão
+      foodDatabase.ts         # Base de alimentos com macros
+      diagnosisData.ts        # Dados do pré-diagnóstico
+      faqData.ts              # Perguntas frequentes
     theme/
-      colors.ts
-      index.ts
+      colors.ts               # Paleta de cores semânticas
+      index.ts                # Tokens: tipografia, espaçamento, bordas, sombras
     types/
-      index.ts
+      index.ts                # Todas as interfaces TypeScript
     utils/
-      helpers.ts
+      helpers.ts              # Utilitários: formatadores, cálculos
 ```
 
 ---
 
 ## Design System
 
-Pastas:
+### Tokens de tema (`src/theme/`)
 
-- `src/theme/colors.ts`
-- `src/theme/index.ts`
+- **Cores semânticas:** primária, secundária, sucesso, alerta, perigo, neutros
+- **Tipografia:** tamanhos, pesos e line-heights padronizados
+- **Espaçamentos:** escala consistente (4, 8, 12, 16, 24, 32...)
+- **Bordas:** raios de arredondamento
+- **Sombras:** elevações para cards e modais
 
-Define tokens de:
+### Componentes reutilizáveis (`src/components/common/`)
 
-- cores semânticas
-- tipografia
-- espaçamentos
-- bordas
-- sombras
-
-Componentes reutilizáveis em `src/components/common`:
-
-- `Card`
-- `Button`
-- `ScreenHeader`
-- `ProgressBar`
-- `GlucoseStatusBadge`
-- `EmptyState`
-
-Gráfico:
-
-- `src/components/charts/GlucoseChart.tsx`
+| Componente | Uso |
+|-----------|-----|
+| `Button` | Botões com variantes (primary, secondary, outline, ghost) |
+| `Card` | Container com sombra e bordas arredondadas |
+| `ScreenHeader` | Cabeçalho padrão das telas com título e ações |
+| `ProgressBar` | Barra de progresso para metas e macros |
+| `GlucoseStatusBadge` | Badge colorido de status glicêmico |
+| `EmptyState` | Estado vazio com ícone e mensagem |
 
 ---
 
-## Tipagem e Domínio
+## Tipos TypeScript
 
-Arquivo: `src/types/index.ts`
+Arquivo: [src/types/index.ts](src/types/index.ts)
 
-Modelos tipados para:
+Interfaces tipadas para todo o domínio:
 
-- usuário
-- glicose
-- alimentação
-- diário
-- pré-diagnóstico
-- FAQ
-- notificações
-- medicações
-- metas
-- exercícios
-- sono
-- dicas
-- configurações
-- tipos de navegação (`RootStackParamList`, `TabParamList`)
+`User` · `GlucoseReading` · `Meal` · `Food` · `DiaryEntry` · `Medication` · `Goal` · `WaterEntry` · `Exercise` · `SleepEntry` · `Notification` · `Tip` · `DiagnosisResult` · `FAQItem` · `AppSettings`
+
+Tipos de navegação: `RootStackParamList` · `TabParamList`
 
 ---
 
-## Dados Mockados
-
-Arquivos:
-
-- `src/data/mockData.ts`
-- `src/data/foodDatabase.ts`
-- `src/data/diagnosisData.ts`
-- `src/data/faqData.ts`
-
-Uso atual:
-
-- alimentar as telas sem depender de API
-- acelerar validação visual/UX
-- facilitar testes manuais de fluxo
-
----
-
-## Fluxo de Uso do App
+## Fluxo de Uso
 
 1. Usuário abre o app
-2. Se não onboarded, entra em onboarding
-3. Após concluir, vai para `Main` (tabs)
-4. Usuário navega pelas abas e abre telas complementares via stack
-5. Ações de cadastro/edição refletem no `AppContext` local
+2. Se for a primeira vez, passa pelo **Onboarding**
+3. Após concluir, acessa as **abas principais**
+4. Navega entre as telas de detalhe/cadastro pelo **Stack Navigator**
+5. Todas as ações refletem no **AppContext** (memória da sessão)
 
----
+> O app funciona atualmente **sem backend externo** — os dados são mantidos em memória durante a sessão via `AppContext` e dados mockados.
