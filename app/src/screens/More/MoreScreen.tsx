@@ -55,6 +55,13 @@ export default function MoreScreen() {
           onPress: () => navigation.navigate('Goals' as any),
         },
         {
+          icon: <Moon size={20} color="#fff" />,
+          label: 'Sono',
+          sublabel: 'Monitore seu descanso',
+          color: Colors.purple,
+          onPress: () => navigation.navigate('Sleep' as any),
+        },
+        {
           icon: <TrendingUp size={20} color="#fff" />,
           label: 'Relatórios',
           sublabel: 'Gráficos e análises detalhadas',

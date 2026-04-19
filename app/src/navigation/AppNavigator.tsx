@@ -26,6 +26,8 @@ import ReportsScreen from '../screens/Reports/ReportsScreen';
 import SettingsScreen from '../screens/Settings/SettingsScreen';
 import NotificationsScreen from '../screens/Notifications/NotificationsScreen';
 import WaterScreen from '../screens/Water/WaterScreen';
+import SleepScreen from '../screens/Sleep/SleepScreen';
+import AddSleepScreen from '../screens/Sleep/AddSleepScreen';
 import MedicationsScreen from '../screens/Medications/MedicationsScreen';
 import GoalsScreen from '../screens/Goals/GoalsScreen';
 import FAQScreen from '../screens/FAQ/FAQScreen';
@@ -76,6 +78,8 @@ export default function AppNavigator() {
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="Water" component={WaterScreen} />
+            <Stack.Screen name="Sleep" component={SleepScreen} />
+            <Stack.Screen name="AddSleep" component={AddSleepScreen} options={{ animation: 'slide_from_bottom' }} />
             <Stack.Screen name="Medications" component={MedicationsScreen} />
             <Stack.Screen name="Goals" component={GoalsScreen} />
             <Stack.Screen name="FAQ" component={FAQScreen} />

@@ -3,6 +3,7 @@ export type StatusUsuario = 'ATIVO' | 'INATIVO';
 export type Perfil = 'USUARIO' | 'ADMIN';
 export type Humor = 'OTIMO' | 'BOM' | 'OK' | 'MAL' | 'PESSIMO';
 export type Categoria = 'EXERCICIO' | 'ALIMENTACAO' | 'EMERGENCIA' | 'BEM_ESTAR';
+export type QualidadeSono = 'PESSIMA' | 'RUIM' | 'BOA' | 'EXCELENTE';
 
 export interface JwtPayload {
   id: string;

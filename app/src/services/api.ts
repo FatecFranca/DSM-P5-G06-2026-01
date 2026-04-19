@@ -162,3 +162,105 @@ export async function apiListarFaq() {
   const res = await apiReq<{ success: boolean; data: ApiFAQ[] }>('/faq');
   return res.data;
 }
+
+// ─── Sono ─────────────────────────────────────────────────────────────────────
+
+export type QualidadeSono = 'PESSIMA' | 'RUIM' | 'BOA' | 'EXCELENTE';
+export type QualidadeApp = 'poor' | 'fair' | 'good' | 'excellent';
+
+export interface ApiSono {
+  id: string;
+  usuarioId: string;
+  data: string;
+  horaDeitar: string;
+  horaAcordar: string;
+  duracao: number;
+  qualidade: QualidadeSono;
+  notas?: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+const QUALIDADE_PARA_APP: Record<QualidadeSono, QualidadeApp> = {
+  EXCELENTE: 'excellent',
+  BOA: 'good',
+  RUIM: 'fair',
+  PESSIMA: 'poor',
+};
+
+const QUALIDADE_PARA_API: Record<QualidadeApp, QualidadeSono> = {
+  excellent: 'EXCELENTE',
+  good: 'BOA',
+  fair: 'RUIM',
+  poor: 'PESSIMA',
+};
+
+export function sonoParaEntry(sono: ApiSono) {
+  return {
+    id: sono.id,
+    date: sono.data,
+    bedtime: sono.horaDeitar,
+    wakeTime: sono.horaAcordar,
+    duration: sono.duracao,
+    quality: QUALIDADE_PARA_APP[sono.qualidade],
+    notes: sono.notas ?? undefined,
+  };
+}
+
+export async function apiListarSono(pagina = 1, limite = 100) {
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiSono> }>(
+    `/sono?pagina=${pagina}&limite=${limite}`
+  );
+  return res.data;
+}
+
+export async function apiCriarSono(params: {
+  date: string;
+  bedtime: string;
+  wakeTime: string;
+  duration: number;
+  quality: QualidadeApp;
+  notes?: string;
+}) {
+  const res = await apiReq<{ success: boolean; data: ApiSono }>(
+    '/sono',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        data: params.date,
+        horaDeitar: params.bedtime,
+        horaAcordar: params.wakeTime,
+        duracao: params.duration,
+        qualidade: QUALIDADE_PARA_API[params.quality],
+        notas: params.notes,
+      }),
+    }
+  );
+  return res.data;
+}
+
+export async function apiAtualizarSono(id: string, params: {
+  date?: string;
+  bedtime?: string;
+  wakeTime?: string;
+  duration?: number;
+  quality?: QualidadeApp;
+  notes?: string;
+}) {
+  const body: Record<string, unknown> = {};
+  if (params.date !== undefined) body['data'] = params.date;
+  if (params.bedtime !== undefined) body['horaDeitar'] = params.bedtime;
+  if (params.wakeTime !== undefined) body['horaAcordar'] = params.wakeTime;
+  if (params.duration !== undefined) body['duracao'] = params.duration;
+  if (params.quality !== undefined) body['qualidade'] = QUALIDADE_PARA_API[params.quality];
+  if (params.notes !== undefined) body['notas'] = params.notes;
+  const res = await apiReq<{ success: boolean; data: ApiSono }>(
+    `/sono/${id}`,
+    { method: 'PUT', body: JSON.stringify(body) }
+  );
+  return res.data;
+}
+
+export async function apiDeletarSono(id: string) {
+  await apiReq<{ success: boolean }>(`/sono/${id}`, { method: 'DELETE' });
+}

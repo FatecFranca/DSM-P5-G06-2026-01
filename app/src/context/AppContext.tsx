@@ -6,8 +6,9 @@ import {
 import {
   MOCK_USER, MOCK_GLUCOSE, MOCK_MEALS, MOCK_JOURNAL,
   MOCK_NOTIFICATIONS, MOCK_MEDICATIONS, MOCK_WATER_LOG,
-  MOCK_GOALS, MOCK_EXERCISES, MOCK_SLEEP,
+  MOCK_GOALS, MOCK_EXERCISES,
 } from '../data/mockData';
+import { apiListarSono, apiCriarSono, apiAtualizarSono, apiDeletarSono, sonoParaEntry } from '../services/api';
 
 interface AppContextType {
   user: User;
@@ -39,6 +40,12 @@ interface AppContextType {
   completeOnboarding: () => void;
   updateGoal: (id: string, current: number) => void;
   addExercise: (entry: Omit<ExerciseEntry, 'id'>) => void;
+  addSleepEntry: (entry: Omit<SleepEntry, 'id'>) => Promise<void>;
+  updateSleepEntry: (id: string, updates: Omit<SleepEntry, 'id'>) => Promise<void>;
+  deleteSleepEntry: (id: string) => Promise<void>;
+  loadSleepEntries: () => Promise<void>;
+  sleepLoading: boolean;
+  getAvgSleepDuration: () => number;
   unreadNotificationsCount: number;
 }
 
@@ -65,7 +72,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [waterLog, setWaterLog] = useState<WaterLog[]>(MOCK_WATER_LOG);
   const [goals, setGoals] = useState<Goal[]>(MOCK_GOALS);
   const [exercises, setExercises] = useState<ExerciseEntry[]>(MOCK_EXERCISES);
-  const [sleepEntries] = useState<SleepEntry[]>(MOCK_SLEEP);
+  const [sleepEntries, setSleepEntries] = useState<SleepEntry[]>([]);
+  const [sleepLoading, setSleepLoading] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [onboarded, setOnboarded] = useState(false);
 
@@ -147,6 +155,41 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setExercises(prev => [newEntry, ...prev]);
   }, []);
 
+  const loadSleepEntries = useCallback(async () => {
+    setSleepLoading(true);
+    try {
+      const result = await apiListarSono(1, 100);
+      setSleepEntries(result.dados.map(sonoParaEntry) as SleepEntry[]);
+    } catch {
+      // keep current state on error
+    } finally {
+      setSleepLoading(false);
+    }
+  }, []);
+
+  const addSleepEntry = useCallback(async (entry: Omit<SleepEntry, 'id'>) => {
+    const sono = await apiCriarSono(entry);
+    const newEntry = sonoParaEntry(sono) as SleepEntry;
+    setSleepEntries(prev => [newEntry, ...prev].sort((a, b) => b.date.localeCompare(a.date)));
+  }, []);
+
+  const updateSleepEntry = useCallback(async (id: string, updates: Omit<SleepEntry, 'id'>) => {
+    const sono = await apiAtualizarSono(id, updates);
+    const updated = sonoParaEntry(sono) as SleepEntry;
+    setSleepEntries(prev => prev.map(s => s.id === id ? updated : s).sort((a, b) => b.date.localeCompare(a.date)));
+  }, []);
+
+  const deleteSleepEntry = useCallback(async (id: string) => {
+    setSleepEntries(prev => prev.filter(s => s.id !== id));
+    await apiDeletarSono(id);
+  }, []);
+
+  const getAvgSleepDuration = useCallback(() => {
+    if (sleepEntries.length === 0) return 0;
+    const total = sleepEntries.reduce((sum, s) => sum + s.duration, 0);
+    return Math.round((total / sleepEntries.length) * 10) / 10;
+  }, [sleepEntries]);
+
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
 
   return (
@@ -156,7 +199,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addGlucoseReading, deleteGlucoseReading, addMeal, deleteMeal,
       addJournal, deleteJournal, markNotificationRead, markAllNotificationsRead,
       toggleMedication, addWater, getTodayWater, updateSettings, updateUser,
-      completeOnboarding, updateGoal, addExercise, unreadNotificationsCount,
+      completeOnboarding, updateGoal, addExercise,
+      addSleepEntry, updateSleepEntry, deleteSleepEntry, loadSleepEntries, sleepLoading, getAvgSleepDuration,
+      unreadNotificationsCount,
     }}>
       {children}
     </AppContext.Provider>

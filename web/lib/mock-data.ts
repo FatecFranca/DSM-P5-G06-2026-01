@@ -506,3 +506,53 @@ export const DIABETES_TYPE_DISTRIBUTION = [
   { name: "Pré-diabetes", value: 1, color: "#F59E0B" },
   { name: "Gestacional", value: 1, color: "#EC4899" },
 ];
+
+// ─── Sono ──────────────────────────────────────────────────────────────────────
+
+export type SleepQuality = "excellent" | "good" | "fair" | "poor";
+
+export interface SleepEntry {
+  id: string;
+  userId: string;
+  date: string;
+  bedtime: string;
+  wakeTime: string;
+  duration: number;
+  quality: SleepQuality;
+  notes?: string;
+}
+
+export const MOCK_SLEEP: SleepEntry[] = [
+  { id: "1",  userId: "1", date: "2026-04-19", bedtime: "22:30", wakeTime: "06:00", duration: 7.5, quality: "good" },
+  { id: "2",  userId: "1", date: "2026-04-18", bedtime: "23:00", wakeTime: "06:30", duration: 7.5, quality: "excellent" },
+  { id: "3",  userId: "2", date: "2026-04-18", bedtime: "01:00", wakeTime: "07:30", duration: 6.5, quality: "fair",      notes: "Saída com amigos" },
+  { id: "4",  userId: "1", date: "2026-04-17", bedtime: "22:00", wakeTime: "06:00", duration: 8,   quality: "excellent" },
+  { id: "5",  userId: "3", date: "2026-04-17", bedtime: "00:30", wakeTime: "06:30", duration: 6,   quality: "poor",      notes: "Hipoglicemia à noite" },
+  { id: "6",  userId: "2", date: "2026-04-17", bedtime: "22:30", wakeTime: "06:00", duration: 7.5, quality: "good" },
+  { id: "7",  userId: "1", date: "2026-04-16", bedtime: "23:00", wakeTime: "06:30", duration: 7.5, quality: "good" },
+  { id: "8",  userId: "4", date: "2026-04-16", bedtime: "00:00", wakeTime: "05:30", duration: 5.5, quality: "poor",      notes: "Trabalho atrasado" },
+  { id: "9",  userId: "3", date: "2026-04-16", bedtime: "22:00", wakeTime: "05:30", duration: 7.5, quality: "excellent" },
+  { id: "10", userId: "1", date: "2026-04-15", bedtime: "22:30", wakeTime: "06:00", duration: 7.5, quality: "good" },
+  { id: "11", userId: "2", date: "2026-04-15", bedtime: "23:30", wakeTime: "07:00", duration: 7.5, quality: "good" },
+  { id: "12", userId: "4", date: "2026-04-15", bedtime: "21:30", wakeTime: "05:00", duration: 7.5, quality: "excellent" },
+  { id: "13", userId: "5", date: "2026-04-14", bedtime: "02:00", wakeTime: "08:00", duration: 6,   quality: "fair",      notes: "Insônia" },
+  { id: "14", userId: "1", date: "2026-04-14", bedtime: "22:00", wakeTime: "05:30", duration: 7.5, quality: "good" },
+  { id: "15", userId: "3", date: "2026-04-13", bedtime: "23:00", wakeTime: "05:30", duration: 6.5, quality: "fair" },
+];
+
+export const SLEEP_QUALITY_DISTRIBUTION = [
+  { name: "Excelente", value: 5, color: "#4CAF82" },
+  { name: "Boa",       value: 7, color: "#3B8ED0" },
+  { name: "Regular",   value: 2, color: "#F59E0B" },
+  { name: "Ruim",      value: 1, color: "#EF4444" },
+];
+
+export const WEEKLY_SLEEP_HOURS = [
+  { day: "Seg", hours: 7.5, quality: "good" as SleepQuality },
+  { day: "Ter", hours: 8,   quality: "excellent" as SleepQuality },
+  { day: "Qua", hours: 6.5, quality: "fair" as SleepQuality },
+  { day: "Qui", hours: 7.5, quality: "good" as SleepQuality },
+  { day: "Sex", hours: 6,   quality: "poor" as SleepQuality },
+  { day: "Sáb", hours: 9,   quality: "excellent" as SleepQuality },
+  { day: "Dom", hours: 8.5, quality: "excellent" as SleepQuality },
+];

@@ -199,6 +199,7 @@ export type RootStackParamList = {
   AddMedication: undefined;
   AddGoal: undefined;
   AddExercise: undefined;
+  AddSleep: { editing?: SleepEntry };
 };
 
 export type TabParamList = {

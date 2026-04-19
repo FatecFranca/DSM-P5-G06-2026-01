@@ -55,6 +55,13 @@ enum CategoriaFAQ {
   MONITORAMENTO
 }
 
+enum QualidadeSono {
+  PESSIMA
+  RUIM
+  BOA
+  EXCELENTE
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model Usuario {
@@ -76,6 +83,7 @@ model Usuario {
   atualizadoEm  DateTime      @updatedAt
 
   diarios Diario[]
+  sonos   Sono[]
 
   @@map("usuarios")
 }
@@ -120,4 +128,20 @@ model FAQ {
   atualizadoEm DateTime    @updatedAt
 
   @@map("faqs")
+}
+
+model Sono {
+  id           String        @id @default(uuid())
+  usuarioId    String
+  usuario      Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  data         String
+  horaDeitar   String
+  horaAcordar  String
+  duracao      Float
+  qualidade    QualidadeSono
+  notas        String?
+  criadoEm     DateTime      @default(now())
+  atualizadoEm DateTime      @updatedAt
+
+  @@map("sonos")
 }

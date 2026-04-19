@@ -213,6 +213,39 @@ export async function webDeletarDica(id: string) {
   );
 }
 
+// ─── Admin: Sono ─────────────────────────────────────────────────────────────
+
+export type QualidadeSono = 'PESSIMA' | 'RUIM' | 'BOA' | 'EXCELENTE';
+
+export interface ApiSono {
+  id: string;
+  usuarioId: string;
+  data: string;
+  horaDeitar: string;
+  horaAcordar: string;
+  duracao: number;
+  qualidade: QualidadeSono;
+  notas?: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+  usuario?: { id: string; nome: string; email: string };
+}
+
+export const QUALIDADE_SONO_MAP: Record<QualidadeSono, 'excellent' | 'good' | 'fair' | 'poor'> = {
+  EXCELENTE: 'excellent',
+  BOA: 'good',
+  RUIM: 'fair',
+  PESSIMA: 'poor',
+};
+
+export async function webListarSono(pagina = 1, limite = 100, qualidade?: QualidadeSono) {
+  const q = qualidade ? `&qualidade=${qualidade}` : '';
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiSono> }>(
+    `/admin/sono?pagina=${pagina}&limite=${limite}${q}`
+  );
+  return res.data;
+}
+
 // ─── FAQ ──────────────────────────────────────────────────────────────────────
 
 export type CategoriaFAQ =
