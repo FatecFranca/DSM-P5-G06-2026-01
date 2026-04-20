@@ -110,6 +110,7 @@ model Usuario {
   sonos   Sono[]
   metas   Meta[]
   glicoses Glicose[]
+  hidratacoes Hidratacao[]
 
   @@map("usuarios")
 }
@@ -205,5 +206,14 @@ model Meta {
   @@map("metas")
   }
 
+model Hidratacao {
+  id         String   @id @default(uuid())
+  usuarioId  String
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  data       String   
+  hora       String   
+  quantidade Int      
+  criadoEm   DateTime @default(now())
 
-
+  @@map("hidratacoes")
+}

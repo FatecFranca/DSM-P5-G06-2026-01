@@ -8,6 +8,7 @@ import faqRoutes from './faqRoutes';
 import sonoRoutes from './sonoRoutes';
 import metasRoutes from './metasRoutes';
 import glicoseRoutes from './glicoseRoutes';
+import hidratacaoRoutes from './hidratacaoRoutes';
 
 
 const router = Router();
@@ -21,6 +22,6 @@ router.use('/faq', faqRoutes);
 router.use('/sono', sonoRoutes);
 router.use('/metas', metasRoutes);
 router.use('/glicose', glicoseRoutes);
-
+router.use('/hidratacao', hidratacaoRoutes);
 
 export default router;
