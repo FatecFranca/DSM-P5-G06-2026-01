@@ -6,6 +6,7 @@ import adminRoutes from './adminRoutes';
 import dicasRoutes from './dicasRoutes';
 import faqRoutes from './faqRoutes';
 import sonoRoutes from './sonoRoutes';
+import metasRoutes from './metasRoutes';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/admin', adminRoutes);
 router.use('/dicas', dicasRoutes);
 router.use('/faq', faqRoutes);
 router.use('/sono', sonoRoutes);
+router.use('/metas', metasRoutes);
 
 export default router;

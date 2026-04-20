@@ -264,3 +264,126 @@ export async function apiAtualizarSono(id: string, params: {
 export async function apiDeletarSono(id: string) {
   await apiReq<{ success: boolean }>(`/sono/${id}`, { method: 'DELETE' });
 }
+
+// ─── Metas ────────────────────────────────────────────────────────────────────
+
+export type CategoriaMeta = 'GLICOSE' | 'PESO' | 'EXERCICIO' | 'AGUA' | 'SONO' | 'PASSOS';
+export type CategoriaGoal = 'glucose' | 'weight' | 'exercise' | 'water' | 'sleep' | 'steps';
+
+export interface ApiMeta {
+  id: string;
+  usuarioId: string;
+  titulo: string;
+  descricao: string;
+  alvo: number;
+  atual: number;
+  unidade: string;
+  categoria: CategoriaMeta;
+  prazo: string;
+  concluida: boolean;
+  cor: string;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+const CATEGORIA_PARA_GOAL: Record<CategoriaMeta, CategoriaGoal> = {
+  GLICOSE:  'glucose',
+  PESO:     'weight',
+  EXERCICIO:'exercise',
+  AGUA:     'water',
+  SONO:     'sleep',
+  PASSOS:   'steps',
+};
+
+const GOAL_PARA_CATEGORIA: Record<CategoriaGoal, CategoriaMeta> = {
+  glucose:  'GLICOSE',
+  weight:   'PESO',
+  exercise: 'EXERCICIO',
+  water:    'AGUA',
+  sleep:    'SONO',
+  steps:    'PASSOS',
+};
+
+export function metaParaGoal(m: ApiMeta) {
+  return {
+    id: m.id,
+    title: m.titulo,
+    description: m.descricao,
+    target: m.alvo,
+    current: m.atual,
+    unit: m.unidade,
+    category: CATEGORIA_PARA_GOAL[m.categoria] ?? 'glucose',
+    deadline: m.prazo,
+    completed: m.concluida,
+    color: m.cor,
+  };
+}
+
+export async function apiListarMetas(pagina = 1, limite = 100) {
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiMeta> }>(
+    `/metas?pagina=${pagina}&limite=${limite}`
+  );
+  return res.data;
+}
+
+export async function apiCriarMeta(params: {
+  title: string;
+  description?: string;
+  target: number;
+  current?: number;
+  unit: string;
+  category: CategoriaGoal;
+  deadline: string;
+  color?: string;
+}) {
+  const res = await apiReq<{ success: boolean; data: ApiMeta }>(
+    '/metas',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        titulo: params.title,
+        descricao: params.description,
+        alvo: params.target,
+        atual: params.current,
+        unidade: params.unit,
+        categoria: GOAL_PARA_CATEGORIA[params.category],
+        prazo: params.deadline,
+        cor: params.color,
+      }),
+    }
+  );
+  return res.data;
+}
+
+export async function apiAtualizarMeta(id: string, params: {
+  title?: string;
+  description?: string;
+  target?: number;
+  current?: number;
+  unit?: string;
+  category?: CategoriaGoal;
+  deadline?: string;
+  completed?: boolean;
+  color?: string;
+}) {
+  const body: Record<string, unknown> = {};
+  if (params.title !== undefined) body['titulo'] = params.title;
+  if (params.description !== undefined) body['descricao'] = params.description;
+  if (params.target !== undefined) body['alvo'] = params.target;
+  if (params.current !== undefined) body['atual'] = params.current;
+  if (params.unit !== undefined) body['unidade'] = params.unit;
+  if (params.category !== undefined) body['categoria'] = GOAL_PARA_CATEGORIA[params.category];
+  if (params.deadline !== undefined) body['prazo'] = params.deadline;
+  if (params.completed !== undefined) body['concluida'] = params.completed;
+  if (params.color !== undefined) body['cor'] = params.color;
+
+  const res = await apiReq<{ success: boolean; data: ApiMeta }>(
+    `/metas/${id}`,
+    { method: 'PUT', body: JSON.stringify(body) }
+  );
+  return res.data;
+}
+
+export async function apiDeletarMeta(id: string) {
+  await apiReq<{ success: boolean }>(`/metas/${id}`, { method: 'DELETE' });
+}

@@ -111,7 +111,33 @@ export const DIAGNOSIS_QUESTIONS: DiagnosisQuestion[] = [
       { label: 'Extremamente lento', value: 3 },
     ],
   },
-];
+];0     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export const getRiskLevel = (score: number, maxScore: number) => {
   const percentage = (score / maxScore) * 100;

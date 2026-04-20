@@ -4,6 +4,7 @@ export type Perfil = 'USUARIO' | 'ADMIN';
 export type Humor = 'OTIMO' | 'BOM' | 'OK' | 'MAL' | 'PESSIMO';
 export type Categoria = 'EXERCICIO' | 'ALIMENTACAO' | 'EMERGENCIA' | 'BEM_ESTAR';
 export type QualidadeSono = 'PESSIMA' | 'RUIM' | 'BOA' | 'EXCELENTE';
+export type CategoriaMeta = 'GLICOSE' | 'PESO' | 'EXERCICIO' | 'AGUA' | 'SONO' | 'PASSOS';
 
 export interface JwtPayload {
   id: string;

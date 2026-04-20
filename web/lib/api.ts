@@ -326,3 +326,86 @@ export async function webDeletarFaq(id: string) {
     { method: 'DELETE' }
   );
 }
+
+// ─── Metas ────────────────────────────────────────────────────────────────────
+
+export type CategoriaMeta = 'GLICOSE' | 'PESO' | 'EXERCICIO' | 'AGUA' | 'SONO' | 'PASSOS';
+
+export interface ApiMeta {
+  id: string;
+  usuarioId: string;
+  titulo: string;
+  descricao: string;
+  alvo: number;
+  atual: number;
+  unidade: string;
+  categoria: CategoriaMeta;
+  prazo: string;
+  concluida: boolean;
+  cor: string;
+  criadoEm: string;
+  atualizadoEm: string;
+  usuario?: { id: string; nome: string; email: string };
+}
+
+export const CATEGORIA_META_LABEL: Record<CategoriaMeta, string> = {
+  GLICOSE:  'Glicose',
+  PESO:     'Peso',
+  EXERCICIO:'Exercício',
+  AGUA:     'Água',
+  SONO:     'Sono',
+  PASSOS:   'Passos',
+};
+
+export async function webListarMetas(pagina = 1, limite = 100, categoria?: CategoriaMeta, concluida?: boolean) {
+  const params = new URLSearchParams({ pagina: String(pagina), limite: String(limite) });
+  if (categoria) params.set('categoria', categoria);
+  if (concluida !== undefined) params.set('concluida', String(concluida));
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiMeta> }>(
+    `/admin/metas?${params}`
+  );
+  return res.data;
+}
+
+export async function webCriarMeta(payload: {
+  titulo: string;
+  descricao?: string;
+  alvo: number;
+  atual?: number;
+  unidade: string;
+  categoria: CategoriaMeta;
+  prazo: string;
+  concluida?: boolean;
+  cor?: string;
+}) {
+  const res = await apiReq<{ success: boolean; data: ApiMeta }>(
+    '/metas',
+    { method: 'POST', body: JSON.stringify(payload) }
+  );
+  return res.data;
+}
+
+export async function webAtualizarMeta(id: string, payload: Partial<{
+  titulo: string;
+  descricao: string;
+  alvo: number;
+  atual: number;
+  unidade: string;
+  categoria: CategoriaMeta;
+  prazo: string;
+  concluida: boolean;
+  cor: string;
+}>) {
+  const res = await apiReq<{ success: boolean; data: ApiMeta }>(
+    `/metas/${id}`,
+    { method: 'PUT', body: JSON.stringify(payload) }
+  );
+  return res.data;
+}
+
+export async function webDeletarMeta(id: string) {
+  await apiReq<{ success: boolean }>(
+    `/metas/${id}`,
+    { method: 'DELETE' }
+  );
+}

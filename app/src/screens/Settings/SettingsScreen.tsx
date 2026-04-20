@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Modal, Pressable, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   Bell, Moon, Activity, Database, Shield, Info,
@@ -7,27 +7,24 @@ import {
 } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../theme';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { Card } from '../../components/common/Card';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SettingsScreen() {
   const { settings, updateSettings } = useApp();
+  const { logout } = useAuth();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const toggle = (key: keyof typeof settings) =>
     updateSettings({ [key]: !settings[key] } as any);
 
   const handleClearData = () => {
-    Alert.alert(
-      'Apagar dados',
-      'Tem certeza que deseja apagar todos os dados? Esta ação não pode ser desfeita.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Apagar', style: 'destructive', onPress: () => Alert.alert('Dados apagados', 'Todos os dados foram removidos.') },
-      ]
-    );
+    // TODO: implementar limpeza de dados
   };
 
   const row = (icon: React.ReactNode, label: string, sublabel?: string, right?: React.ReactNode, onPress?: () => void) => (
@@ -50,6 +47,26 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      {/* Logout Modal */}
+      <Modal visible={showLogoutModal} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setShowLogoutModal(false)}>
+        <Pressable style={modalStyles.backdrop} onPress={() => setShowLogoutModal(false)} />
+        <View style={modalStyles.sheet}>
+          <View style={modalStyles.handle} />
+          <View style={modalStyles.iconWrap}>
+            <LogOut size={28} color={Colors.danger} />
+          </View>
+          <Text style={modalStyles.title}>Sair da conta?</Text>
+          <Text style={modalStyles.desc}>Você precisará fazer login novamente para acessar o aplicativo.</Text>
+          <View style={modalStyles.btnRow}>
+            <TouchableOpacity style={modalStyles.cancelBtn} onPress={() => setShowLogoutModal(false)}>
+              <Text style={modalStyles.cancelText}>Cancelar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={modalStyles.confirmBtn} onPress={() => { setShowLogoutModal(false); logout(); }}>
+              <Text style={modalStyles.confirmText}>Sair</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       <LinearGradient
         colors={['#1A2332', '#2D3748']}
         style={[styles.header, { paddingTop: insets.top + 16 }]}
@@ -212,7 +229,10 @@ export default function SettingsScreen() {
         </Card>
 
         {/* Logout */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={() => Alert.alert('Sair', 'Deseja sair da conta?', [{ text: 'Cancelar', style: 'cancel' }, { text: 'Sair', style: 'destructive' }])}>
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={() => setShowLogoutModal(true)}
+        >
           <LogOut size={18} color={Colors.danger} />
           <Text style={styles.logoutText}>Sair da Conta</Text>
         </TouchableOpacity>
@@ -249,4 +269,49 @@ const styles = StyleSheet.create({
   },
   logoutText: { fontSize: FontSize.md, color: Colors.danger, fontWeight: FontWeight.semibold },
   versionText: { textAlign: 'center', fontSize: FontSize.xs, color: Colors.textLight, marginTop: Spacing.xl },
+});
+
+const modalStyles = StyleSheet.create({
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  sheet: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    backgroundColor: Colors.card,
+    borderTopLeftRadius: BorderRadius.xxl,
+    borderTopRightRadius: BorderRadius.xxl,
+    paddingHorizontal: Spacing.xl,
+    paddingBottom: Spacing.xxxl,
+    paddingTop: Spacing.md,
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  handle: {
+    width: 40, height: 4, borderRadius: 2,
+    backgroundColor: Colors.border, marginBottom: Spacing.sm,
+  },
+  iconWrap: {
+    width: 60, height: 60, borderRadius: 30,
+    backgroundColor: Colors.dangerLight,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: Spacing.xs,
+  },
+  title: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.text },
+  desc: {
+    fontSize: FontSize.sm, color: Colors.textSecondary,
+    textAlign: 'center', paddingHorizontal: Spacing.md,
+  },
+  btnRow: { flexDirection: 'row', gap: 10, width: '100%', marginTop: Spacing.sm },
+  cancelBtn: {
+    flex: 1, paddingVertical: 13, borderRadius: BorderRadius.md,
+    borderWidth: 1, borderColor: Colors.border, alignItems: 'center',
+  },
+  cancelText: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: Colors.textSecondary },
+  confirmBtn: {
+    flex: 1, paddingVertical: 13, borderRadius: BorderRadius.md,
+    backgroundColor: Colors.danger, alignItems: 'center',
+  },
+  confirmText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: '#fff' },
 });

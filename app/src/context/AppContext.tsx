@@ -6,9 +6,13 @@ import {
 import {
   MOCK_USER, MOCK_GLUCOSE, MOCK_MEALS, MOCK_JOURNAL,
   MOCK_NOTIFICATIONS, MOCK_MEDICATIONS, MOCK_WATER_LOG,
-  MOCK_GOALS, MOCK_EXERCISES,
+  MOCK_EXERCISES,
 } from '../data/mockData';
-import { apiListarSono, apiCriarSono, apiAtualizarSono, apiDeletarSono, sonoParaEntry } from '../services/api';
+import {
+  apiListarSono, apiCriarSono, apiAtualizarSono, apiDeletarSono, sonoParaEntry,
+  apiListarMetas, apiCriarMeta, apiAtualizarMeta, apiDeletarMeta, metaParaGoal,
+  type CategoriaGoal,
+} from '../services/api';
 
 interface AppContextType {
   user: User;
@@ -38,7 +42,12 @@ interface AppContextType {
   updateSettings: (s: Partial<AppSettings>) => void;
   updateUser: (u: Partial<User>) => void;
   completeOnboarding: () => void;
-  updateGoal: (id: string, current: number) => void;
+  updateGoal: (id: string, current: number) => Promise<void>;
+  addGoal: (params: { title: string; description?: string; target: number; unit: string; category: CategoriaGoal; deadline: string; color?: string }) => Promise<void>;
+  editGoalFields: (id: string, params: { title?: string; description?: string; target?: number; unit?: string; category?: CategoriaGoal; deadline?: string; color?: string }) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
+  loadGoals: () => Promise<void>;
+  goalsLoading: boolean;
   addExercise: (entry: Omit<ExerciseEntry, 'id'>) => void;
   addSleepEntry: (entry: Omit<SleepEntry, 'id'>) => Promise<void>;
   updateSleepEntry: (id: string, updates: Omit<SleepEntry, 'id'>) => Promise<void>;
@@ -70,7 +79,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
   const [medications, setMedications] = useState<Medication[]>(MOCK_MEDICATIONS);
   const [waterLog, setWaterLog] = useState<WaterLog[]>(MOCK_WATER_LOG);
-  const [goals, setGoals] = useState<Goal[]>(MOCK_GOALS);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [goalsLoading, setGoalsLoading] = useState(false);
   const [exercises, setExercises] = useState<ExerciseEntry[]>(MOCK_EXERCISES);
   const [sleepEntries, setSleepEntries] = useState<SleepEntry[]>([]);
   const [sleepLoading, setSleepLoading] = useState(false);
@@ -146,8 +156,38 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setOnboarded(true);
   }, []);
 
-  const updateGoal = useCallback((id: string, current: number) => {
-    setGoals(prev => prev.map(g => g.id === id ? { ...g, current, completed: current >= g.target } : g));
+  const loadGoals = useCallback(async () => {
+    setGoalsLoading(true);
+    try {
+      const result = await apiListarMetas(1, 100);
+      setGoals(result.dados.map(m => metaParaGoal(m) as Goal));
+    } catch {
+      // keep current state on error
+    } finally {
+      setGoalsLoading(false);
+    }
+  }, []);
+
+  const updateGoal = useCallback(async (id: string, current: number) => {
+    const existing = goals.find(g => g.id === id);
+    const completed = existing ? current >= existing.target : false;
+    const meta = await apiAtualizarMeta(id, { current, completed });
+    setGoals(prev => prev.map(g => g.id === id ? (metaParaGoal(meta) as Goal) : g));
+  }, [goals]);
+
+  const addGoal = useCallback(async (params: { title: string; description?: string; target: number; unit: string; category: CategoriaGoal; deadline: string; color?: string }) => {
+    const meta = await apiCriarMeta(params);
+    setGoals(prev => [metaParaGoal(meta) as Goal, ...prev]);
+  }, []);
+
+  const editGoalFields = useCallback(async (id: string, params: { title?: string; description?: string; target?: number; unit?: string; category?: CategoriaGoal; deadline?: string; color?: string }) => {
+    const meta = await apiAtualizarMeta(id, params);
+    setGoals(prev => prev.map(g => g.id === id ? (metaParaGoal(meta) as Goal) : g));
+  }, []);
+
+  const deleteGoal = useCallback(async (id: string) => {
+    setGoals(prev => prev.filter(g => g.id !== id));
+    await apiDeletarMeta(id);
   }, []);
 
   const addExercise = useCallback((entry: Omit<ExerciseEntry, 'id'>) => {
@@ -199,7 +239,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addGlucoseReading, deleteGlucoseReading, addMeal, deleteMeal,
       addJournal, deleteJournal, markNotificationRead, markAllNotificationsRead,
       toggleMedication, addWater, getTodayWater, updateSettings, updateUser,
-      completeOnboarding, updateGoal, addExercise,
+      completeOnboarding, updateGoal, addGoal, editGoalFields, deleteGoal, loadGoals, goalsLoading, addExercise,
       addSleepEntry, updateSleepEntry, deleteSleepEntry, loadSleepEntries, sleepLoading, getAvgSleepDuration,
       unreadNotificationsCount,
     }}>

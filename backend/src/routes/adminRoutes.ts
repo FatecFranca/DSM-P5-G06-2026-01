@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { userController } from '../controllers/userController';
 import { diarioController } from '../controllers/diarioController';
 import { sonoController } from '../controllers/sonoController';
+import { metasController } from '../controllers/metasController';
 import { autenticar, autorizarAdmin } from '../middlewares/auth';
 
 const router = Router();
@@ -122,5 +123,38 @@ router.get('/diarios', diarioController.listarTodos);
  *         description: Acesso negado — apenas administradores
  */
 router.get('/sono', sonoController.listarTodos);
+
+/**
+ * @swagger
+ * /admin/metas:
+ *   get:
+ *     summary: Listar todas as metas de todos os usuários
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: pagina
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limite
+ *         schema: { type: integer, default: 50 }
+ *       - in: query
+ *         name: categoria
+ *         schema:
+ *           type: string
+ *           enum: [GLICOSE, PESO, EXERCICIO, AGUA, SONO, PASSOS]
+ *       - in: query
+ *         name: concluida
+ *         schema: { type: boolean }
+ *     responses:
+ *       200:
+ *         description: Lista paginada de metas
+ *       401:
+ *         description: Não autenticado
+ *       403:
+ *         description: Acesso negado — apenas administradores
+ */
+router.get('/metas', metasController.listarTodos);
 
 export default router;
