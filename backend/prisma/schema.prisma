@@ -71,6 +71,21 @@ enum CategoriaMeta {
   PASSOS
 }
 
+enum ContextoGlicose {
+  JEJUM
+  PRE_REFEICAO
+  POS_REFEICAO
+  ANTES_DORMIR
+  ALEATORIA
+}
+
+enum StatusGlicose {
+  BAIXO
+  NORMAL
+  ALTO
+  MUITO_ALTO
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model Usuario {
@@ -94,6 +109,7 @@ model Usuario {
   diarios Diario[]
   sonos   Sono[]
   metas   Meta[]
+  glicoses Glicose[]
 
   @@map("usuarios")
 }
@@ -156,6 +172,20 @@ model Sono {
   @@map("sonos")
 }
 
+model Glicose {
+  id         String   @id @default(uuid())
+  usuarioId  String
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  valor      Int
+  contexto   ContextoGlicose
+  data       String
+  hora       String
+  status     StatusGlicose
+  notas      String?
+
+  @@map("glicoses")
+}
+
 model Meta {
   id           String        @id @default(uuid())
   usuarioId    String
@@ -173,4 +203,8 @@ model Meta {
   atualizadoEm DateTime      @updatedAt
 
   @@map("metas")
+  }
 }
+
+
+

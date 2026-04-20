@@ -7,6 +7,8 @@ import dicasRoutes from './dicasRoutes';
 import faqRoutes from './faqRoutes';
 import sonoRoutes from './sonoRoutes';
 import metasRoutes from './metasRoutes';
+import glicoseRoutes from './glicoseRoutes';
+
 
 const router = Router();
 
@@ -18,5 +20,7 @@ router.use('/dicas', dicasRoutes);
 router.use('/faq', faqRoutes);
 router.use('/sono', sonoRoutes);
 router.use('/metas', metasRoutes);
+router.use('/glicose', glicoseRoutes);
+
 
 export default router;

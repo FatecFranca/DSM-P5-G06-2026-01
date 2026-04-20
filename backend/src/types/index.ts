@@ -4,7 +4,10 @@ export type Perfil = 'USUARIO' | 'ADMIN';
 export type Humor = 'OTIMO' | 'BOM' | 'OK' | 'MAL' | 'PESSIMO';
 export type Categoria = 'EXERCICIO' | 'ALIMENTACAO' | 'EMERGENCIA' | 'BEM_ESTAR';
 export type QualidadeSono = 'PESSIMA' | 'RUIM' | 'BOA' | 'EXCELENTE';
+export type StatusGlicose = 'BAIXO' | 'NORMAL' | 'ALTO' | 'MUITO_ALTO';
+export type ContextoGlicose = 'JEJUM' | 'PRE_REFEICAO' | 'POS_REFEICAO' | 'ANTES_DORMIR' | 'ALEATORIA';
 export type CategoriaMeta = 'GLICOSE' | 'PESO' | 'EXERCICIO' | 'AGUA' | 'SONO' | 'PASSOS';
+
 
 export interface JwtPayload {
   id: string;
