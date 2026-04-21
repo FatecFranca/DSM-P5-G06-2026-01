@@ -409,3 +409,45 @@ export async function webDeletarMeta(id: string) {
     { method: 'DELETE' }
   );
 }
+
+// ─── Hidratação ────────────────────────────────────────────────────────────────
+
+export interface ApiHidratacao {
+  id: string;
+  usuarioId: string;
+  data: string;
+  hora: string;
+  quantidade: number;
+  criadoEm: string;
+  usuario?: { id: string; nome: string; email: string };
+}
+
+export async function webListarHidratacao(pagina = 1, limite = 200) {
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiHidratacao> }>(
+    `/admin/hidratacao?pagina=${pagina}&limite=${limite}`
+  );
+  return res.data;
+}
+
+export async function webCriarHidratacao(payload: { data: string; hora: string; quantidade: number }) {
+  const res = await apiReq<{ success: boolean; data: ApiHidratacao }>(
+    '/hidratacao',
+    { method: 'POST', body: JSON.stringify(payload) }
+  );
+  return res.data;
+}
+
+export async function webAtualizarHidratacao(id: string, payload: Partial<{ data: string; hora: string; quantidade: number }>) {
+  const res = await apiReq<{ success: boolean; data: ApiHidratacao }>(
+    `/hidratacao/${id}`,
+    { method: 'PUT', body: JSON.stringify(payload) }
+  );
+  return res.data;
+}
+
+export async function webDeletarHidratacao(id: string) {
+  await apiReq<{ success: boolean }>(
+    `/hidratacao/${id}`,
+    { method: 'DELETE' }
+  );
+}

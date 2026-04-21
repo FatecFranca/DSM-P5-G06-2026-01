@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './docs/swagger';
+import { generateApiDocs } from './docs/htmlDocs';
 import routes from './routes';
 import { errorHandler } from './middlewares/errorHandler';
 
@@ -36,9 +37,9 @@ app.use(
     customCss: `
       .swagger-ui .topbar { background-color: #2563eb; }
       .swagger-ui .topbar-wrapper .link span { display: none; }
-      .swagger-ui .topbar-wrapper::after { content: 'DiabeControl API'; color: white; font-size: 18px; font-weight: bold; margin-left: 12px; }
+      .swagger-ui .topbar-wrapper::after { content: 'DiabetesCare API'; color: white; font-size: 18px; font-weight: bold; margin-left: 12px; }
     `,
-    customSiteTitle: 'DiabeControl — Documentação da API',
+    customSiteTitle: 'DiabetesCare — Documentação da API',
     swaggerOptions: {
       persistAuthorization: true,
     },
@@ -51,6 +52,12 @@ app.get('/docs.json', (_req, res) => {
   res.send(swaggerSpec);
 });
 
+// ─── Documentação HTML ─────────────────────────────────────────────────────────
+app.get('/documentacao', (_req, res) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(generateApiDocs(process.env.BASE_URL ?? 'http://localhost:3000'));
+});
+
 // ─── Rotas da API ──────────────────────────────────────────────────────────────
 app.use('/api', routes);
 
@@ -58,7 +65,7 @@ app.use('/api', routes);
 app.get('/health', (_req, res) => {
   res.json({
     success: true,
-    message: 'API DiabeControl funcionando',
+    message: 'API DiabetesCare funcionando',
     version: '1.0.0',
     ambiente: process.env.NODE_ENV ?? 'development',
     timestamp: new Date().toISOString(),

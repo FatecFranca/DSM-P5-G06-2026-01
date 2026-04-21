@@ -20,11 +20,11 @@ async function main() {
   const senhaHash = await bcrypt.hash('admin123', 10);
 
   const admin = await prisma.usuario.upsert({
-    where: { email: 'admin@diabecontrol.com' },
+    where: { email: 'admin@diabetesCare.com' },
     update: {},
     create: {
       nome: 'Administrador',
-      email: 'admin@diabecontrol.com',
+      email: 'admin@diabetesCare.com',
       senha: senhaHash,
       perfil: 'ADMIN',
       status: 'ATIVO',
@@ -286,7 +286,7 @@ O álcool pode tanto **elevar quanto reduzir** a glicose, dependendo do tipo e q
   console.log(`\n✅ ${criadas} dica(s) criada(s).`);
   console.log('\n🎉 Seed concluído!\n');
   console.log('─────────────────────────────────────');
-  console.log('  Admin: admin@diabecontrol.com');
+  console.log('  Admin: admin@diabetesCare.com');
   console.log('  Senha: admin123');
   console.log('─────────────────────────────────────\n');
 }

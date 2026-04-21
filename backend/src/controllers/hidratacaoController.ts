@@ -115,8 +115,59 @@ export const hidratacaoController = {
   },
 
   /**
+   * PUT /api/hidratacao/:id
+   */
+  async atualizar(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const id = req.params['id'] as string;
+
+      const registro = await hidratacaoModel.buscarPorId(id);
+
+      if (!registro) {
+        throw new ApiError('Registro de hidratação não encontrado', 404);
+      }
+
+      if (
+        registro.usuarioId !== req.usuario?.id &&
+        req.usuario?.perfil !== 'ADMIN'
+      ) {
+        throw new ApiError('Sem permissão para atualizar este registro', 403);
+      }
+
+      const { data, hora, quantidade } = req.body;
+      const updated = await hidratacaoModel.atualizar(id, { data, hora, quantidade });
+
+      res.json({
+        success: true,
+        message: 'Registro de hidratação atualizado com sucesso',
+        data: updated,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * GET /admin/hidratacao — todos os registros (admin)
+   */
+  async listarTodos(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const pagina = Math.max(1, Number(req.query['pagina']) || 1);
+      const limite = Math.min(200, Math.max(1, Number(req.query['limite']) || 50));
+
+      const resultado = await hidratacaoModel.listarTodos(pagina, limite);
+
+      res.json({
+        success: true,
+        data: resultado,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
    * DELETE /api/hidratacao/:id
-   * (opcional, mas geralmente necessário)
    */
   async deletar(req: AuthRequest, res: Response, next: NextFunction) {
     try {

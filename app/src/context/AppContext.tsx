@@ -11,6 +11,8 @@ import {
 import {
   apiListarSono, apiCriarSono, apiAtualizarSono, apiDeletarSono, sonoParaEntry,
   apiListarMetas, apiCriarMeta, apiAtualizarMeta, apiDeletarMeta, metaParaGoal,
+  apiListarHidratacao, apiCriarHidratacao, apiAtualizarHidratacao, apiDeletarHidratacao,
+  hidratacaoParaWaterLog,
   type CategoriaGoal,
 } from '../services/api';
 
@@ -37,8 +39,13 @@ interface AppContextType {
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   toggleMedication: (id: string) => void;
-  addWater: (amount: number) => void;
+  addWater: (amount: number) => Promise<void>;
   getTodayWater: () => number;
+  loadHidratacao: () => Promise<void>;
+  hidratacaoLoading: boolean;
+  criarHidratacao: (params: { data: string; hora: string; quantidade: number }) => Promise<void>;
+  atualizarHidratacao: (id: string, params: { data?: string; hora?: string; quantidade?: number }) => Promise<void>;
+  deletarHidratacao: (id: string) => Promise<void>;
   updateSettings: (s: Partial<AppSettings>) => void;
   updateUser: (u: Partial<User>) => void;
   completeOnboarding: () => void;
@@ -84,6 +91,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [exercises, setExercises] = useState<ExerciseEntry[]>(MOCK_EXERCISES);
   const [sleepEntries, setSleepEntries] = useState<SleepEntry[]>([]);
   const [sleepLoading, setSleepLoading] = useState(false);
+  const [hidratacaoLoading, setHidratacaoLoading] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [onboarded, setOnboarded] = useState(false);
 
@@ -128,19 +136,42 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     ));
   }, []);
 
-  const addWater = useCallback((amount: number) => {
+  const loadHidratacao = useCallback(async () => {
+    setHidratacaoLoading(true);
+    try {
+      const result = await apiListarHidratacao(1, 200);
+      setWaterLog(result.dados.map(hidratacaoParaWaterLog) as WaterLog[]);
+    } catch {
+      // keep current state on error
+    } finally {
+      setHidratacaoLoading(false);
+    }
+  }, []);
+
+  const addWater = useCallback(async (amount: number) => {
     const today = new Date().toISOString().split('T')[0];
-    const newLog: WaterLog = {
-      id: Date.now().toString(),
-      date: today,
-      amount,
-      time: new Date().toTimeString().slice(0, 5),
-    };
-    setWaterLog(prev => [newLog, ...prev]);
+    const now = new Date().toTimeString().slice(0, 5);
+    const h = await apiCriarHidratacao({ data: today, hora: now, quantidade: amount });
+    setWaterLog(prev => [hidratacaoParaWaterLog(h) as WaterLog, ...prev]);
+  }, []);
+
+  const criarHidratacao = useCallback(async (params: { data: string; hora: string; quantidade: number }) => {
+    const h = await apiCriarHidratacao(params);
+    setWaterLog(prev => [hidratacaoParaWaterLog(h) as WaterLog, ...prev]);
+  }, []);
+
+  const atualizarHidratacao = useCallback(async (id: string, params: { data?: string; hora?: string; quantidade?: number }) => {
+    const h = await apiAtualizarHidratacao(id, params);
+    setWaterLog(prev => prev.map(w => w.id === id ? (hidratacaoParaWaterLog(h) as WaterLog) : w));
+  }, []);
+
+  const deletarHidratacao = useCallback(async (id: string) => {
+    setWaterLog(prev => prev.filter(w => w.id !== id));
+    await apiDeletarHidratacao(id);
   }, []);
 
   const getTodayWater = useCallback(() => {
-    const today = '2026-04-06';
+    const today = new Date().toISOString().split('T')[0];
     return waterLog.filter(w => w.date === today).reduce((sum, w) => sum + w.amount, 0);
   }, [waterLog]);
 
@@ -241,6 +272,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       toggleMedication, addWater, getTodayWater, updateSettings, updateUser,
       completeOnboarding, updateGoal, addGoal, editGoalFields, deleteGoal, loadGoals, goalsLoading, addExercise,
       addSleepEntry, updateSleepEntry, deleteSleepEntry, loadSleepEntries, sleepLoading, getAvgSleepDuration,
+      loadHidratacao, hidratacaoLoading, criarHidratacao, atualizarHidratacao, deletarHidratacao,
       unreadNotificationsCount,
     }}>
       {children}

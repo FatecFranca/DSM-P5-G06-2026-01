@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { hidratacaoController } from '../controllers/hidratacaoController';
 import { autenticar } from '../middlewares/auth';
 import { validate } from '../middlewares/validate';
-import { criarHidratacaoSchema } from '../validations/hidratacaoValidation';
+import { criarHidratacaoSchema, atualizarHidratacaoSchema } from '../validations/hidratacaoValidation';
 
 const router = Router();
 
@@ -122,5 +122,9 @@ router.get('/', autenticar, hidratacaoController.listar);
  *         description: Não autenticado
  */
 router.get('/hoje', autenticar, hidratacaoController.totalHoje);
+
+router.get('/:id', autenticar, hidratacaoController.buscarPorId);
+router.put('/:id', autenticar, validate(atualizarHidratacaoSchema), hidratacaoController.atualizar);
+router.delete('/:id', autenticar, hidratacaoController.deletar);
 
 export default router;

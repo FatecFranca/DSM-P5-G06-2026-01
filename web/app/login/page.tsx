@@ -132,7 +132,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-[#9CA3AF] mt-6">
-          DiabeControl Admin · Acesso restrito
+          DiabetesCare Admin · Acesso restrito
         </p>
       </div>
     </div>

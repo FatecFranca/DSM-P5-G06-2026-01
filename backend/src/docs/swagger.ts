@@ -4,10 +4,10 @@ const options: swaggerJsDoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'DiabeControl API',
+      title: 'DiabetesCare API',
       version: '1.0.0',
       description:
-        'API backend do sistema de gerenciamento de diabetes **DiabeControl**.\n\n' +
+        'API backend do sistema de gerenciamento de diabetes **DiabetesCare**.\n\n' +
         '### Autenticação\n' +
         'Use o endpoint `/auth/registrar` ou `/auth/login` para obter um token JWT.\n' +
         'Inclua o token no header `Authorization: Bearer <token>` nas demais rotas.\n\n' +

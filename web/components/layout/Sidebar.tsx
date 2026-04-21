@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, Activity, UtensilsCrossed, BookOpen,
   Pill, Target, BarChart2, Lightbulb, Bell, Settings,
-  Heart, LogOut, Menu, X, HelpCircle, Moon,
+  Heart, LogOut, Menu, X, HelpCircle, Moon, Droplets,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,7 @@ const navGroups = [
       { label: "Medicamentos", href: "/medications", icon: Pill },
       { label: "Metas", href: "/goals", icon: Target },
       { label: "Sono", href: "/sleep", icon: Moon },
+      { label: "Hidratação", href: "/water", icon: Droplets },
     ],
   },
   {

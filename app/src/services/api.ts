@@ -387,3 +387,53 @@ export async function apiAtualizarMeta(id: string, params: {
 export async function apiDeletarMeta(id: string) {
   await apiReq<{ success: boolean }>(`/metas/${id}`, { method: 'DELETE' });
 }
+
+// ─── Hidratação ────────────────────────────────────────────────────────────────
+
+export interface ApiHidratacao {
+  id: string;
+  usuarioId: string;
+  data: string;
+  hora: string;
+  quantidade: number;
+  criadoEm: string;
+}
+
+export function hidratacaoParaWaterLog(h: ApiHidratacao) {
+  return {
+    id: h.id,
+    date: h.data,
+    amount: h.quantidade,
+    time: h.hora,
+  };
+}
+
+export async function apiListarHidratacao(pagina = 1, limite = 100, dataInicio?: string, dataFim?: string) {
+  const params = new URLSearchParams({ pagina: String(pagina), limite: String(limite) });
+  if (dataInicio) params.set('dataInicio', dataInicio);
+  if (dataFim) params.set('dataFim', dataFim);
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiHidratacao> }>(
+    `/hidratacao?${params}`
+  );
+  return res.data;
+}
+
+export async function apiCriarHidratacao(params: { data: string; hora: string; quantidade: number }) {
+  const res = await apiReq<{ success: boolean; data: ApiHidratacao }>(
+    '/hidratacao',
+    { method: 'POST', body: JSON.stringify(params) }
+  );
+  return res.data;
+}
+
+export async function apiAtualizarHidratacao(id: string, params: { data?: string; hora?: string; quantidade?: number }) {
+  const res = await apiReq<{ success: boolean; data: ApiHidratacao }>(
+    `/hidratacao/${id}`,
+    { method: 'PUT', body: JSON.stringify(params) }
+  );
+  return res.data;
+}
+
+export async function apiDeletarHidratacao(id: string) {
+  await apiReq<{ success: boolean }>(`/hidratacao/${id}`, { method: 'DELETE' });
+}

@@ -3,6 +3,7 @@ import { userController } from '../controllers/userController';
 import { diarioController } from '../controllers/diarioController';
 import { sonoController } from '../controllers/sonoController';
 import { metasController } from '../controllers/metasController';
+import { hidratacaoController } from '../controllers/hidratacaoController';
 import { autenticar, autorizarAdmin } from '../middlewares/auth';
 
 const router = Router();
@@ -156,5 +157,7 @@ router.get('/sono', sonoController.listarTodos);
  *         description: Acesso negado — apenas administradores
  */
 router.get('/metas', metasController.listarTodos);
+
+router.get('/hidratacao', hidratacaoController.listarTodos);
 
 export default router;
