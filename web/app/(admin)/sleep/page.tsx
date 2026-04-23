@@ -61,7 +61,7 @@ function avgDuration(entries: SleepEntry[]) {
 }
 
 function buildWeeklyChart(entries: SleepEntry[]) {
-  const uniqueDates = [...new Set(entries.map(e => e.date))].sort().slice(-7);
+  const uniqueDates = Array.from(new Set(entries.map(e => e.date))).sort().slice(-7);
   return uniqueDates.map(date => {
     const day = entries.filter(e => e.date === date);
     const hours = Math.round((day.reduce((s, e) => s + e.duration, 0) / day.length) * 10) / 10;
