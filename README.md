@@ -634,7 +634,7 @@ Cada módulo possui README próprio com detalhes de instalação, arquitetura, t
 | Nome | GitHub |
 |------|--------|
 | Gabriel Pessoni | [@gpessoni](https://github.com/gpessoni) |
-| Hudson Ribeiro Barbara Junior | — |
-| Livia Portela | — |
+| Hudson Ribeiro Barbara Junior | [@HudsonRBJr](https://github.com/HudsonRBJr) |
+| Livia Portela | [@liviaportela](https://github.com/liviaportela) |
 
 > Projeto acadêmico — **Fatec · DSM · 5º Semestre · 2026/1**
