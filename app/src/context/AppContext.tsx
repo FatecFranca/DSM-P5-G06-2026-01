@@ -13,6 +13,7 @@ import {
   apiListarMetas, apiCriarMeta, apiAtualizarMeta, apiDeletarMeta, metaParaGoal,
   apiListarHidratacao, apiCriarHidratacao, apiAtualizarHidratacao, apiDeletarHidratacao,
   hidratacaoParaWaterLog,
+  apiListarGlicose, apiCriarGlicose, apiDeletarGlicose, glicoseParaReading,
   type CategoriaGoal,
 } from '../services/api';
 
@@ -30,8 +31,10 @@ interface AppContextType {
   settings: AppSettings;
   onboarded: boolean;
 
-  addGlucoseReading: (reading: Omit<GlucoseReading, 'id'>) => void;
-  deleteGlucoseReading: (id: string) => void;
+  addGlucoseReading: (reading: Omit<GlucoseReading, 'id'>) => Promise<void>;
+  deleteGlucoseReading: (id: string) => Promise<void>;
+  loadGlicose: () => Promise<void>;
+  glicoseLoading: boolean;
   addMeal: (meal: Omit<MealEntry, 'id'>) => void;
   deleteMeal: (id: string) => void;
   addJournal: (entry: Omit<JournalEntry, 'id'>) => void;
@@ -80,7 +83,8 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User>(MOCK_USER);
-  const [glucoseReadings, setGlucoseReadings] = useState<GlucoseReading[]>(MOCK_GLUCOSE);
+  const [glucoseReadings, setGlucoseReadings] = useState<GlucoseReading[]>([]);
+  const [glicoseLoading, setGlicoseLoading] = useState(false);
   const [meals, setMeals] = useState<MealEntry[]>(MOCK_MEALS);
   const [journals, setJournals] = useState<JournalEntry[]>(MOCK_JOURNAL);
   const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
@@ -95,13 +99,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [onboarded, setOnboarded] = useState(false);
 
-  const addGlucoseReading = useCallback((reading: Omit<GlucoseReading, 'id'>) => {
-    const newReading: GlucoseReading = { ...reading, id: Date.now().toString() };
-    setGlucoseReadings(prev => [newReading, ...prev]);
+  const loadGlicose = useCallback(async () => {
+    setGlicoseLoading(true);
+    try {
+      const result = await apiListarGlicose(1, 200);
+      setGlucoseReadings(result.dados.map(g => glicoseParaReading(g) as GlucoseReading));
+    } catch {
+      // keep current state on error
+    } finally {
+      setGlicoseLoading(false);
+    }
   }, []);
 
-  const deleteGlucoseReading = useCallback((id: string) => {
+  const addGlucoseReading = useCallback(async (reading: Omit<GlucoseReading, 'id'>) => {
+    const g = await apiCriarGlicose({
+      valor: reading.value,
+      contexto: reading.context as any,
+      data: reading.date,
+      hora: reading.time,
+      notas: reading.notes,
+    });
+    setGlucoseReadings(prev => [glicoseParaReading(g) as GlucoseReading, ...prev]);
+  }, []);
+
+  const deleteGlucoseReading = useCallback(async (id: string) => {
     setGlucoseReadings(prev => prev.filter(r => r.id !== id));
+    await apiDeletarGlicose(id);
   }, []);
 
   const addMeal = useCallback((meal: Omit<MealEntry, 'id'>) => {
@@ -267,7 +290,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     <AppContext.Provider value={{
       user, glucoseReadings, meals, journals, notifications, medications,
       waterLog, goals, exercises, sleepEntries, settings, onboarded,
-      addGlucoseReading, deleteGlucoseReading, addMeal, deleteMeal,
+      addGlucoseReading, deleteGlucoseReading, loadGlicose, glicoseLoading, addMeal, deleteMeal,
       addJournal, deleteJournal, markNotificationRead, markAllNotificationsRead,
       toggleMedication, addWater, getTodayWater, updateSettings, updateUser,
       completeOnboarding, updateGoal, addGoal, editGoalFields, deleteGoal, loadGoals, goalsLoading, addExercise,

@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal,
+  TouchableWithoutFeedback, ActivityIndicator,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Plus, Trash2, Activity, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
+import { Plus, Trash2, Activity } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../theme';
 import { useApp } from '../../context/AppContext';
 import { Card } from '../../components/common/Card';
 import { GlucoseStatusBadge } from '../../components/common/GlucoseStatusBadge';
 import { GlucoseChart } from '../../components/charts/GlucoseChart';
 import { RootStackParamList } from '../../types';
-import { getContextLabel, getRelativeDate, getGlucoseAverage } from '../../utils/helpers';
+import { getContextLabel, getGlucoseAverage } from '../../utils/helpers';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -18,15 +21,22 @@ const FILTERS = ['Todos', 'Hoje', 'Semana', 'Mês'] as const;
 type Filter = typeof FILTERS[number];
 
 export default function GlucoseScreen() {
-  const { glucoseReadings, deleteGlucoseReading, user } = useApp();
+  const { glucoseReadings, deleteGlucoseReading, loadGlicose, glicoseLoading, user } = useApp();
   const navigation = useNavigation<Nav>();
   const [filter, setFilter] = useState<Filter>('Todos');
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
 
+  useEffect(() => { loadGlicose(); }, []);
+
+  const today = new Date().toISOString().split('T')[0];
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
   const filtered = glucoseReadings.filter(r => {
-    if (filter === 'Hoje') return r.date === '2026-04-06';
-    if (filter === 'Semana') return r.date >= '2026-03-30';
-    if (filter === 'Mês') return r.date >= '2026-03-06';
+    if (filter === 'Hoje') return r.date === today;
+    if (filter === 'Semana') return r.date >= weekAgo;
+    if (filter === 'Mês') return r.date >= monthAgo;
     return true;
   });
 
@@ -36,11 +46,20 @@ export default function GlucoseScreen() {
   const highCount = filtered.filter(r => r.status === 'high' || r.status === 'very_high').length;
   const lowCount = filtered.filter(r => r.status === 'low').length;
 
-  const handleDelete = (id: string) => {
-    Alert.alert('Excluir', 'Deseja excluir esta leitura?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Excluir', style: 'destructive', onPress: () => deleteGlucoseReading(id) },
-    ]);
+  const confirmDelete = (id: string) => setDeleteId(id);
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    setDeleteId(null);
+    await deleteGlucoseReading(deleteId);
+  };
+
+  const getRelativeDate = (date: string) => {
+    if (date === today) return 'Hoje';
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    if (date === yesterday) return 'Ontem';
+    const [y, m, d] = date.split('-');
+    return `${d}/${m}/${y}`;
   };
 
   return (
@@ -56,6 +75,13 @@ export default function GlucoseScreen() {
           <Text style={styles.addBtnText}>Registrar</Text>
         </TouchableOpacity>
       </View>
+
+      {glicoseLoading && (
+        <View style={styles.loadingBanner}>
+          <ActivityIndicator size="small" color={Colors.primary} />
+          <Text style={styles.loadingText}>Carregando leituras...</Text>
+        </View>
+      )}
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Stats */}
@@ -82,13 +108,18 @@ export default function GlucoseScreen() {
         {glucoseReadings.length > 1 && (
           <Card style={styles.chartCard}>
             <Text style={styles.chartTitle}>Evolução (últimas leituras)</Text>
-            <Text style={styles.chartSub}>Faixa ideal: {user.targetGlucoseMin}-{user.targetGlucoseMax} mg/dL</Text>
+            <Text style={styles.chartSub}>
+              Faixa ideal: {user.targetGlucoseMin}-{user.targetGlucoseMax} mg/dL
+            </Text>
             <GlucoseChart data={glucoseReadings} height={180} />
           </Card>
         )}
 
         {/* Filter */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filters} contentContainerStyle={styles.filtersContent}>
+        <ScrollView
+          horizontal showsHorizontalScrollIndicator={false}
+          style={styles.filters} contentContainerStyle={styles.filtersContent}
+        >
           {FILTERS.map(f => (
             <TouchableOpacity
               key={f}
@@ -102,7 +133,7 @@ export default function GlucoseScreen() {
 
         {/* List */}
         <View style={styles.list}>
-          {filtered.length === 0 ? (
+          {filtered.length === 0 && !glicoseLoading ? (
             <View style={styles.emptyWrap}>
               <Activity size={48} color={Colors.border} />
               <Text style={styles.emptyTitle}>Nenhuma leitura</Text>
@@ -113,7 +144,12 @@ export default function GlucoseScreen() {
               <Card key={reading.id} style={styles.readingCard} padding={14}>
                 <View style={styles.readingRow}>
                   <View style={styles.readingLeft}>
-                    <View style={[styles.readingDot, { backgroundColor: reading.status === 'normal' ? Colors.primary : reading.status === 'high' ? Colors.warning : reading.status === 'very_high' ? Colors.danger : Colors.secondary }]} />
+                    <View style={[styles.readingDot, {
+                      backgroundColor:
+                        reading.status === 'normal' ? Colors.primary :
+                        reading.status === 'high' ? Colors.warning :
+                        reading.status === 'very_high' ? Colors.danger : Colors.secondary,
+                    }]} />
                     <View>
                       <View style={styles.readingValueRow}>
                         <Text style={styles.readingValue}>{reading.value}</Text>
@@ -125,13 +161,19 @@ export default function GlucoseScreen() {
 
                   <View style={styles.readingRight}>
                     <GlucoseStatusBadge status={reading.status} size="sm" />
-                    <Text style={styles.readingDate}>{getRelativeDate(reading.date)} • {reading.time}</Text>
+                    <Text style={styles.readingDate}>
+                      {getRelativeDate(reading.date)} • {reading.time}
+                    </Text>
                     {reading.notes && (
                       <Text style={styles.readingNotes} numberOfLines={1}>{reading.notes}</Text>
                     )}
                   </View>
 
-                  <TouchableOpacity onPress={() => handleDelete(reading.id)} style={styles.deleteBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <TouchableOpacity
+                    onPress={() => confirmDelete(reading.id)}
+                    style={styles.deleteBtn}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
                     <Trash2 size={16} color={Colors.textLight} />
                   </TouchableOpacity>
                 </View>
@@ -142,20 +184,46 @@ export default function GlucoseScreen() {
 
         <View style={{ height: 32 }} />
       </ScrollView>
+
+      {/* Delete confirmation modal */}
+      <Modal visible={!!deleteId} transparent animationType="fade">
+        <TouchableWithoutFeedback onPress={() => setDeleteId(null)}>
+          <View style={styles.overlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalCard}>
+                <View style={styles.modalIconWrap}>
+                  <Trash2 size={24} color={Colors.danger} />
+                </View>
+                <Text style={styles.modalTitle}>Excluir leitura?</Text>
+                <Text style={styles.modalDesc}>Esta ação não pode ser desfeita.</Text>
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.modalBtnCancel]}
+                    onPress={() => setDeleteId(null)}
+                  >
+                    <Text style={styles.modalBtnCancelText}>Cancelar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.modalBtnDelete]}
+                    onPress={handleDelete}
+                  >
+                    <Text style={styles.modalBtnDeleteText}>Excluir</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
-    backgroundColor: Colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md,
+    backgroundColor: Colors.card, borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
   headerTitle: { fontSize: FontSize.xxl, fontWeight: FontWeight.extrabold, color: Colors.text },
   addBtn: {
@@ -164,12 +232,15 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   addBtnText: { color: '#fff', fontWeight: FontWeight.semibold, fontSize: FontSize.sm },
+  loadingBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: Spacing.lg, paddingVertical: 8,
+    backgroundColor: Colors.primaryLight,
+  },
+  loadingText: { fontSize: FontSize.sm, color: Colors.primary },
   statsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    gap: 8,
-    marginBottom: Spacing.lg,
+    flexDirection: 'row', paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg, gap: 8, marginBottom: Spacing.lg,
   },
   statCard: { flex: 1, alignItems: 'center' },
   statValue: { fontSize: FontSize.xl, fontWeight: FontWeight.extrabold, color: Colors.text },
@@ -203,4 +274,23 @@ const styles = StyleSheet.create({
   readingDate: { fontSize: FontSize.xs, color: Colors.textSecondary },
   readingNotes: { fontSize: FontSize.xs, color: Colors.textLight, maxWidth: 120 },
   deleteBtn: { marginLeft: 10, padding: 4 },
+  // Modal
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  modalCard: {
+    width: '85%', backgroundColor: Colors.card, borderRadius: BorderRadius.xl,
+    padding: Spacing.xl, alignItems: 'center',
+  },
+  modalIconWrap: {
+    width: 52, height: 52, borderRadius: 26,
+    backgroundColor: Colors.danger + '15',
+    alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md,
+  },
+  modalTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.text, marginBottom: 6 },
+  modalDesc: { fontSize: FontSize.sm, color: Colors.textSecondary, marginBottom: Spacing.xl, textAlign: 'center' },
+  modalActions: { flexDirection: 'row', gap: 12, width: '100%' },
+  modalBtn: { flex: 1, paddingVertical: 12, borderRadius: BorderRadius.lg, alignItems: 'center' },
+  modalBtnCancel: { backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border },
+  modalBtnCancelText: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: Colors.text },
+  modalBtnDelete: { backgroundColor: Colors.danger },
+  modalBtnDeleteText: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: '#fff' },
 });

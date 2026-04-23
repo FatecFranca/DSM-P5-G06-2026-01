@@ -1,53 +1,57 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar, ViewStyle,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
-  Activity, Utensils, BookOpen, Droplets, Pill, Target,
-  Bell, ChevronRight, Plus, TrendingUp, Moon, Dumbbell, Heart,
+  Activity, Utensils, Droplets, Pill, Target,
+  Bell, ChevronRight, Moon, Heart,
 } from 'lucide-react-native';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '../../theme';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../theme';
 import { useApp } from '../../context/AppContext';
 import { Card } from '../../components/common/Card';
 import { GlucoseStatusBadge } from '../../components/common/GlucoseStatusBadge';
 import { ProgressBar } from '../../components/common/ProgressBar';
 import { GlucoseChart } from '../../components/charts/GlucoseChart';
 import { RootStackParamList } from '../../types';
-import { getRelativeDate, getMealTypeLabel, getMoodEmoji } from '../../utils/helpers';
+import { getContextLabel, getMealTypeLabel, getMoodEmoji } from '../../utils/helpers';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
-  const { user, glucoseReadings, meals, journals, medications, getTodayWater, goals, unreadNotificationsCount } = useApp();
+  const {
+    user, glucoseReadings, meals, journals, medications,
+    getTodayWater, goals, unreadNotificationsCount, sleepEntries,
+    loadGlicose, loadHidratacao, loadSleepEntries, loadGoals,
+  } = useApp();
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
 
-  const today = '2026-04-06';
+  useEffect(() => {
+    loadGlicose();
+    loadHidratacao();
+    loadSleepEntries();
+    loadGoals();
+  }, []);
+
+  const today = new Date().toISOString().split('T')[0];
+  const lastReading = glucoseReadings[0] ?? null;
   const todayReadings = glucoseReadings.filter(r => r.date === today);
-  const lastReading = todayReadings[0] || glucoseReadings[0];
   const todayMeals = meals.filter(m => m.date === today);
   const todayCalories = todayMeals.reduce((s, m) => s + m.totalCalories, 0);
   const todayCarbs = todayMeals.reduce((s, m) => s + m.totalCarbs, 0);
   const waterMl = getTodayWater();
   const waterGoal = 2500;
-  const todayMeds = medications.filter(m => !m.taken).length;
-  const lastJournal = journals[0];
+  const lastJournal = journals[0] ?? null;
   const recentReadings = glucoseReadings.slice(0, 7);
   const glucoseGoal = goals.find(g => g.category === 'glucose');
-
-  const quickActions = [
-    { icon: <Activity size={22} color={Colors.primary} />, label: 'Glicose', color: Colors.primaryLight, onPress: () => navigation.navigate('AddGlucose' as any) },
-    { icon: <Utensils size={22} color={Colors.secondary} />, label: 'Refeição', color: Colors.secondaryLight, onPress: () => {} },
-    { icon: <Droplets size={22} color={Colors.teal} />, label: 'Água', color: Colors.tealLight, onPress: () => {} },
-    { icon: <Pill size={22} color={Colors.purple} />, label: 'Medicação', color: Colors.purpleLight, onPress: () => {} },
-  ];
+  const lastSleep = sleepEntries[0] ?? null;
 
   const getTimeOfDay = () => {
-    const h = 14;
+    const h = new Date().getHours();
     if (h < 12) return 'Bom dia';
     if (h < 18) return 'Boa tarde';
     return 'Boa noite';
@@ -61,6 +65,20 @@ export default function HomeScreen() {
   };
 
   const status = getOverallStatus();
+
+  const quickActions = [
+    { icon: <Activity size={22} color={Colors.primary} />, label: 'Glicose', color: Colors.primaryLight, onPress: () => navigation.navigate('AddGlucose' as any) },
+    { icon: <Utensils size={22} color={Colors.secondary} />, label: 'Refeição', color: Colors.secondaryLight, onPress: () => {} },
+    { icon: <Droplets size={22} color={Colors.teal} />, label: 'Água', color: Colors.tealLight, onPress: () => {} },
+    { icon: <Pill size={22} color={Colors.purple} />, label: 'Medicação', color: Colors.purpleLight, onPress: () => {} },
+  ];
+
+  const sleepQualityLabel: Record<string, string> = {
+    excellent: 'Excelente', good: 'Boa', fair: 'Regular', poor: 'Ruim',
+  };
+  const sleepQualityColor: Record<string, string> = {
+    excellent: Colors.primary, good: Colors.teal, fair: Colors.warning, poor: Colors.danger,
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -92,13 +110,17 @@ export default function HomeScreen() {
             <View style={styles.statusLeft}>
               <Text style={styles.statusLabel}>Status do dia</Text>
               <Text style={[styles.statusValue, { color: status.color }]}>{status.label}</Text>
-              <Text style={styles.statusSub}>{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
+              <Text style={styles.statusSub}>
+                {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </Text>
             </View>
             <View style={styles.statusRight}>
               <View style={styles.hbaWrap}>
-                <Text style={styles.hbaLabel}>HbA1c</Text>
-                <Text style={styles.hbaValue}>6.8%</Text>
-                <Text style={styles.hbaGood}>Bom ✓</Text>
+                <Text style={styles.hbaLabel}>Glicose</Text>
+                <Text style={styles.hbaValue}>
+                  {lastReading ? `${lastReading.value}` : '—'}
+                </Text>
+                <Text style={styles.hbaSub}>mg/dL</Text>
               </View>
             </View>
           </View>
@@ -108,7 +130,11 @@ export default function HomeScreen() {
           {/* Quick Actions */}
           <View style={styles.quickActions}>
             {quickActions.map((action, i) => (
-              <TouchableOpacity key={i} style={[styles.quickAction, { backgroundColor: action.color }]} onPress={action.onPress}>
+              <TouchableOpacity
+                key={i}
+                style={[styles.quickAction, { backgroundColor: action.color }]}
+                onPress={action.onPress}
+              >
                 {action.icon}
                 <Text style={styles.quickLabel}>{action.label}</Text>
               </TouchableOpacity>
@@ -116,7 +142,7 @@ export default function HomeScreen() {
           </View>
 
           {/* Last Glucose */}
-          {lastReading && (
+          {lastReading ? (
             <Card style={styles.glucoseCard}>
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionTitleRow}>
@@ -135,13 +161,17 @@ export default function HomeScreen() {
                 </View>
                 <View style={styles.glucoseRight}>
                   <GlucoseStatusBadge status={lastReading.status} />
-                  <Text style={styles.glucoseTime}>{getRelativeDate(lastReading.date)} • {lastReading.time}</Text>
-                  <Text style={styles.glucoseCtx}>{lastReading.context === 'fasting' ? 'Em jejum' : 'Pós-refeição'}</Text>
+                  <Text style={styles.glucoseTime}>
+                    {lastReading.date === today ? 'Hoje' : lastReading.date} • {lastReading.time}
+                  </Text>
+                  <Text style={styles.glucoseCtx}>{getContextLabel(lastReading.context)}</Text>
                 </View>
               </View>
 
               <View style={styles.targetRow}>
-                <Text style={styles.targetLabel}>Meta: {user.targetGlucoseMin}-{user.targetGlucoseMax} mg/dL</Text>
+                <Text style={styles.targetLabel}>
+                  Meta: {user.targetGlucoseMin}-{user.targetGlucoseMax} mg/dL
+                </Text>
                 <ProgressBar
                   progress={Math.min(lastReading.value / user.targetGlucoseMax, 1)}
                   color={lastReading.status === 'normal' ? Colors.primary : Colors.warning}
@@ -155,52 +185,21 @@ export default function HomeScreen() {
                 </View>
               )}
             </Card>
+          ) : (
+            <Card style={styles.glucoseCard}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionTitleRow}>
+                  <Activity size={18} color={Colors.primary} />
+                  <Text style={styles.sectionTitle}>Glicose</Text>
+                </View>
+              </View>
+              <Text style={styles.emptyText}>Nenhuma leitura registrada</Text>
+            </Card>
           )}
 
-          {/* Today's Meals */}
-          <Card style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionTitleRow}>
-                <Utensils size={18} color={Colors.secondary} />
-                <Text style={styles.sectionTitle}>Alimentação Hoje</Text>
-              </View>
-              <TouchableOpacity>
-                <Text style={styles.seeAll}>Ver tudo</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.macroRow}>
-              <View style={styles.macroItem}>
-                <Text style={styles.macroValue}>{todayCalories}</Text>
-                <Text style={styles.macroLabel}>kcal</Text>
-              </View>
-              <View style={styles.macroDivider} />
-              <View style={styles.macroItem}>
-                <Text style={styles.macroValue}>{todayCarbs}g</Text>
-                <Text style={styles.macroLabel}>Carbs</Text>
-              </View>
-              <View style={styles.macroDivider} />
-              <View style={styles.macroItem}>
-                <Text style={styles.macroValue}>{todayMeals.length}</Text>
-                <Text style={styles.macroLabel}>Refeições</Text>
-              </View>
-            </View>
-
-            {todayMeals.slice(0, 2).map(meal => (
-              <View key={meal.id} style={styles.mealRow}>
-                <Text style={styles.mealType}>{getMealTypeLabel(meal.type)}</Text>
-                <Text style={styles.mealCal}>{meal.totalCalories} kcal</Text>
-              </View>
-            ))}
-
-            {todayMeals.length === 0 && (
-              <Text style={styles.emptyText}>Nenhuma refeição registrada hoje</Text>
-            )}
-          </Card>
-
-          {/* Water & Medications Row */}
+          {/* Water & Sleep Row */}
           <View style={styles.row}>
-            <Card style={StyleSheet.flatten([styles.halfCard, { marginRight: 8 }])}>
+            <Card style={[styles.halfCard, { marginRight: 8 }]}>
               <View style={styles.halfHeader}>
                 <Droplets size={18} color={Colors.teal} />
                 <Text style={styles.halfTitle}>Hidratação</Text>
@@ -212,21 +211,96 @@ export default function HomeScreen() {
               </View>
             </Card>
 
-            <Card style={StyleSheet.flatten([styles.halfCard, { marginLeft: 8 }])}>
+            <Card style={[styles.halfCard, { marginLeft: 8 }]}>
               <View style={styles.halfHeader}>
-                <Pill size={18} color={Colors.purple} />
-                <Text style={styles.halfTitle}>Medicações</Text>
+                <Moon size={18} color={Colors.purple} />
+                <Text style={styles.halfTitle}>Sono</Text>
               </View>
-              <Text style={styles.halfValue}>{medications.filter(m => m.taken).length}</Text>
-              <Text style={styles.halfSub}>de {medications.length} tomadas</Text>
-              <View style={{ marginTop: 8 }}>
-                <ProgressBar
-                  progress={medications.filter(m => m.taken).length / medications.length}
-                  color={Colors.purple} height={6}
-                />
-              </View>
+              {lastSleep ? (
+                <>
+                  <Text style={styles.halfValue}>{lastSleep.duration}h</Text>
+                  <Text style={[styles.halfSub, { color: sleepQualityColor[lastSleep.quality] ?? Colors.textSecondary }]}>
+                    {sleepQualityLabel[lastSleep.quality] ?? lastSleep.quality}
+                  </Text>
+                  <View style={{ marginTop: 8 }}>
+                    <ProgressBar
+                      progress={Math.min(lastSleep.duration / 8, 1)}
+                      color={sleepQualityColor[lastSleep.quality] ?? Colors.purple}
+                      height={6}
+                    />
+                  </View>
+                </>
+              ) : (
+                <Text style={styles.emptyText}>Sem registro</Text>
+              )}
             </Card>
           </View>
+
+          {/* Medications */}
+          {medications.length > 0 && (
+            <Card style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionTitleRow}>
+                  <Pill size={18} color={Colors.purple} />
+                  <Text style={styles.sectionTitle}>Medicações</Text>
+                </View>
+              </View>
+              <View style={styles.macroRow}>
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroValue}>{medications.filter(m => m.taken).length}</Text>
+                  <Text style={styles.macroLabel}>Tomadas</Text>
+                </View>
+                <View style={styles.macroDivider} />
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroValue}>{medications.filter(m => !m.taken).length}</Text>
+                  <Text style={styles.macroLabel}>Pendentes</Text>
+                </View>
+                <View style={styles.macroDivider} />
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroValue}>{medications.length}</Text>
+                  <Text style={styles.macroLabel}>Total</Text>
+                </View>
+              </View>
+              <ProgressBar
+                progress={medications.filter(m => m.taken).length / medications.length}
+                color={Colors.purple} height={6}
+              />
+            </Card>
+          )}
+
+          {/* Today's Meals */}
+          {todayMeals.length > 0 && (
+            <Card style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionTitleRow}>
+                  <Utensils size={18} color={Colors.secondary} />
+                  <Text style={styles.sectionTitle}>Alimentação Hoje</Text>
+                </View>
+              </View>
+              <View style={styles.macroRow}>
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroValue}>{todayCalories}</Text>
+                  <Text style={styles.macroLabel}>kcal</Text>
+                </View>
+                <View style={styles.macroDivider} />
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroValue}>{todayCarbs}g</Text>
+                  <Text style={styles.macroLabel}>Carbs</Text>
+                </View>
+                <View style={styles.macroDivider} />
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroValue}>{todayMeals.length}</Text>
+                  <Text style={styles.macroLabel}>Refeições</Text>
+                </View>
+              </View>
+              {todayMeals.slice(0, 2).map(meal => (
+                <View key={meal.id} style={styles.mealRow}>
+                  <Text style={styles.mealType}>{getMealTypeLabel(meal.type)}</Text>
+                  <Text style={styles.mealCal}>{meal.totalCalories} kcal</Text>
+                </View>
+              ))}
+            </Card>
+          )}
 
           {/* Goals */}
           {glucoseGoal && (
@@ -234,7 +308,7 @@ export default function HomeScreen() {
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionTitleRow}>
                   <Target size={18} color={Colors.orange} />
-                  <Text style={styles.sectionTitle}>Metas do Mês</Text>
+                  <Text style={styles.sectionTitle}>Metas</Text>
                 </View>
                 <TouchableOpacity>
                   <Text style={styles.seeAll}>Ver todas</Text>
@@ -251,7 +325,9 @@ export default function HomeScreen() {
                   progress={glucoseGoal.current / glucoseGoal.target}
                   color={Colors.orange} height={8}
                 />
-                <Text style={styles.goalSub}>{glucoseGoal.current} / {glucoseGoal.target} {glucoseGoal.unit}</Text>
+                <Text style={styles.goalSub}>
+                  {glucoseGoal.current} / {glucoseGoal.target} {glucoseGoal.unit}
+                </Text>
               </View>
             </Card>
           )}
@@ -261,19 +337,15 @@ export default function HomeScreen() {
             <Card style={styles.section}>
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionTitleRow}>
-                  <BookOpen size={18} color={Colors.pink} />
+                  <Bell size={18} color={Colors.pink} />
                   <Text style={styles.sectionTitle}>Último Diário</Text>
                 </View>
-                <TouchableOpacity>
-                  <Text style={styles.seeAll}>Ver tudo</Text>
-                </TouchableOpacity>
               </View>
               <View style={styles.journalCard}>
                 <Text style={styles.journalEmoji}>{getMoodEmoji(lastJournal.mood)}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.journalTitle}>{lastJournal.title}</Text>
                   <Text style={styles.journalContent} numberOfLines={2}>{lastJournal.content}</Text>
-                  <Text style={styles.journalDate}>{getRelativeDate(lastJournal.date)}</Text>
                 </View>
               </View>
             </Card>
@@ -284,7 +356,9 @@ export default function HomeScreen() {
             <Heart size={24} color="#fff" />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.tipTitle}>Dica do Dia</Text>
-              <Text style={styles.tipText}>Caminhadas de 30 min após refeições reduzem a glicose em até 30%!</Text>
+              <Text style={styles.tipText}>
+                Caminhadas de 30 min após refeições reduzem a glicose em até 30%!
+              </Text>
             </View>
             <ChevronRight size={20} color="rgba(255,255,255,0.7)" />
           </LinearGradient>
@@ -297,22 +371,16 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: 28,
-  },
+  header: { paddingHorizontal: Spacing.lg, paddingBottom: 28 },
   headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.xl,
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: Spacing.xl,
   },
   greeting: { fontSize: FontSize.md, color: 'rgba(255,255,255,0.8)' },
   userName: { fontSize: FontSize.xxl, fontWeight: FontWeight.extrabold, color: '#fff' },
   bellBtn: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center',
   },
   badge: {
     position: 'absolute', top: -2, right: -2,
@@ -322,22 +390,21 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: '#fff', fontSize: 9, fontWeight: FontWeight.bold },
   statusCard: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: BorderRadius.lg,
+    padding: Spacing.lg, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
   },
   statusLeft: {},
   statusLabel: { fontSize: FontSize.xs, color: 'rgba(255,255,255,0.75)', marginBottom: 4 },
   statusValue: { fontSize: FontSize.xl, fontWeight: FontWeight.bold, marginBottom: 2 },
   statusSub: { fontSize: FontSize.xs, color: 'rgba(255,255,255,0.7)' },
   statusRight: {},
-  hbaWrap: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', padding: 12, borderRadius: BorderRadius.md },
+  hbaWrap: {
+    alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)',
+    padding: 12, borderRadius: BorderRadius.md,
+  },
   hbaLabel: { fontSize: FontSize.xs, color: 'rgba(255,255,255,0.8)' },
   hbaValue: { fontSize: FontSize.xl, fontWeight: FontWeight.extrabold, color: '#fff' },
-  hbaGood: { fontSize: FontSize.xs, color: '#fff', marginTop: 2 },
+  hbaSub: { fontSize: FontSize.xs, color: 'rgba(255,255,255,0.75)', marginTop: 1 },
   content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl },
   quickActions: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.lg },
   quickAction: {
@@ -346,11 +413,17 @@ const styles = StyleSheet.create({
   },
   quickLabel: { fontSize: FontSize.xs, fontWeight: FontWeight.medium, color: Colors.text, marginTop: 6 },
   glucoseCard: { marginBottom: Spacing.lg },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
+  sectionHeader: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: Spacing.md,
+  },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: Colors.text },
   seeAll: { fontSize: FontSize.sm, color: Colors.primary, fontWeight: FontWeight.medium },
-  glucoseMain: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  glucoseMain: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 12,
+  },
   glucoseValue: { fontSize: 48, fontWeight: FontWeight.extrabold, color: Colors.text, lineHeight: 52 },
   glucoseUnit: { fontSize: FontSize.sm, color: Colors.textSecondary },
   glucoseRight: { alignItems: 'flex-end', gap: 6 },
@@ -364,10 +437,13 @@ const styles = StyleSheet.create({
   macroValue: { fontSize: FontSize.xl, fontWeight: FontWeight.bold, color: Colors.text },
   macroLabel: { fontSize: FontSize.xs, color: Colors.textSecondary, marginTop: 2 },
   macroDivider: { width: 1, height: 32, backgroundColor: Colors.border },
-  mealRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderTopWidth: 1, borderTopColor: Colors.borderLight },
+  mealRow: {
+    flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6,
+    borderTopWidth: 1, borderTopColor: Colors.borderLight,
+  },
   mealType: { fontSize: FontSize.sm, color: Colors.text, fontWeight: FontWeight.medium },
   mealCal: { fontSize: FontSize.sm, color: Colors.textSecondary },
-  emptyText: { fontSize: FontSize.sm, color: Colors.textSecondary, textAlign: 'center', paddingVertical: 8 },
+  emptyText: { fontSize: FontSize.sm, color: Colors.textSecondary, paddingVertical: 4 },
   row: { flexDirection: 'row', marginBottom: Spacing.lg },
   halfCard: { flex: 1 },
   halfHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
@@ -383,7 +459,6 @@ const styles = StyleSheet.create({
   journalEmoji: { fontSize: 32 },
   journalTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semibold, color: Colors.text, marginBottom: 4 },
   journalContent: { fontSize: FontSize.sm, color: Colors.textSecondary, lineHeight: 20 },
-  journalDate: { fontSize: FontSize.xs, color: Colors.textLight, marginTop: 4 },
   tipBanner: {
     flexDirection: 'row', alignItems: 'center',
     padding: Spacing.lg, borderRadius: BorderRadius.lg, marginBottom: Spacing.lg,

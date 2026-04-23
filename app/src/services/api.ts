@@ -437,3 +437,94 @@ export async function apiAtualizarHidratacao(id: string, params: { data?: string
 export async function apiDeletarHidratacao(id: string) {
   await apiReq<{ success: boolean }>(`/hidratacao/${id}`, { method: 'DELETE' });
 }
+
+// ─── Glicose ──────────────────────────────────────────────────────────────────
+
+export type ContextoGlicose = 'JEJUM' | 'PRE_REFEICAO' | 'POS_REFEICAO' | 'ANTES_DORMIR' | 'ALEATORIA';
+export type StatusGlicoseApi = 'BAIXO' | 'NORMAL' | 'ALTO' | 'MUITO_ALTO';
+type ContextoApp = 'fasting' | 'before_meal' | 'after_meal' | 'bedtime' | 'random';
+type StatusApp = 'low' | 'normal' | 'high' | 'very_high';
+
+export interface ApiGlicose {
+  id: string;
+  usuarioId: string;
+  valor: number;
+  contexto: ContextoGlicose;
+  status: StatusGlicoseApi;
+  data: string;
+  hora: string;
+  notas?: string | null;
+  criadoEm: string;
+}
+
+const CONTEXTO_PARA_APP: Record<ContextoGlicose, ContextoApp> = {
+  JEJUM: 'fasting',
+  PRE_REFEICAO: 'before_meal',
+  POS_REFEICAO: 'after_meal',
+  ANTES_DORMIR: 'bedtime',
+  ALEATORIA: 'random',
+};
+
+const APP_PARA_CONTEXTO: Record<ContextoApp, ContextoGlicose> = {
+  fasting: 'JEJUM',
+  before_meal: 'PRE_REFEICAO',
+  after_meal: 'POS_REFEICAO',
+  bedtime: 'ANTES_DORMIR',
+  random: 'ALEATORIA',
+};
+
+const STATUS_PARA_APP: Record<StatusGlicoseApi, StatusApp> = {
+  BAIXO: 'low',
+  NORMAL: 'normal',
+  ALTO: 'high',
+  MUITO_ALTO: 'very_high',
+};
+
+export function glicoseParaReading(g: ApiGlicose) {
+  return {
+    id: g.id,
+    value: g.valor,
+    context: CONTEXTO_PARA_APP[g.contexto] ?? 'random',
+    status: STATUS_PARA_APP[g.status] ?? 'normal',
+    date: g.data,
+    time: g.hora,
+    notes: g.notas ?? undefined,
+  };
+}
+
+export async function apiListarGlicose(pagina = 1, limite = 100, dataInicio?: string, dataFim?: string) {
+  const params = new URLSearchParams({ pagina: String(pagina), limite: String(limite) });
+  if (dataInicio) params.set('dataInicio', dataInicio);
+  if (dataFim) params.set('dataFim', dataFim);
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiGlicose> }>(
+    `/glicose?${params}`
+  );
+  return res.data;
+}
+
+export async function apiCriarGlicose(params: {
+  valor: number;
+  contexto: ContextoApp;
+  data: string;
+  hora: string;
+  notas?: string;
+}) {
+  const res = await apiReq<{ success: boolean; data: ApiGlicose }>(
+    '/glicose',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        valor: params.valor,
+        contexto: APP_PARA_CONTEXTO[params.contexto],
+        data: params.data,
+        hora: params.hora,
+        notas: params.notas,
+      }),
+    }
+  );
+  return res.data;
+}
+
+export async function apiDeletarGlicose(id: string) {
+  await apiReq<{ success: boolean }>(`/glicose/${id}`, { method: 'DELETE' });
+}

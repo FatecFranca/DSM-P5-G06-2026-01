@@ -40,24 +40,27 @@ export default function AddGlucoseScreen() {
     return colors[status];
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!isValid) {
       Alert.alert('Valor inválido', 'Insira um valor entre 20 e 600 mg/dL');
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      addGlucoseReading({
+    try {
+      await addGlucoseReading({
         value: numValue,
         context,
-        date: '2026-04-06',
+        date: new Date().toISOString().split('T')[0],
         time: new Date().toTimeString().slice(0, 5),
         notes: notes.trim() || undefined,
         status: getGlucoseStatus(numValue),
       });
-      setLoading(false);
       navigation.goBack();
-    }, 600);
+    } catch (e: any) {
+      Alert.alert('Erro', e?.message ?? 'Não foi possível salvar a leitura.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const range = GLUCOSE_RANGES[context];
@@ -137,7 +140,7 @@ export default function AddGlucoseScreen() {
           <View style={styles.dateRow}>
             <View style={styles.dateItem}>
               <Text style={styles.dateLabel}>Data</Text>
-              <Text style={styles.dateValue}>06/04/2026</Text>
+              <Text style={styles.dateValue}>{new Date().toLocaleDateString('pt-BR')}</Text>
             </View>
             <View style={styles.dateDivider} />
             <View style={styles.dateItem}>

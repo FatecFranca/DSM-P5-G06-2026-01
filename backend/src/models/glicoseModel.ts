@@ -71,6 +71,20 @@ export const glicoseModel = {
     });
   },
 
+  async listarTodos(pagina = 1, limite = 50) {
+    const offset = (pagina - 1) * limite;
+    const [glicoses, total] = await Promise.all([
+      prisma.glicose.findMany({
+        skip: offset,
+        take: limite,
+        orderBy: [{ data: 'desc' }, { hora: 'desc' }],
+        include: { usuario: { select: { id: true, nome: true, email: true } } },
+      }),
+      prisma.glicose.count(),
+    ]);
+    return { dados: glicoses, total, pagina, limite, totalPaginas: Math.ceil(total / limite) };
+  },
+
   // ─── Estatísticas ──────────────────────────────────────────────────────────
 
   async estatisticas(

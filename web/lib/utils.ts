@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { GlucoseStatus, DiabetesType, Mood, MealType, MedType, GoalCategory, NotifType, TipCategory } from "./mock-data";
+import type { GlucoseStatus } from "./api";
+import type { DiabetesType, Mood, MealType, MedType, GoalCategory, NotifType, TipCategory } from "./mock-data";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

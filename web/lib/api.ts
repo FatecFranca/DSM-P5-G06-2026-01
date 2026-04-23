@@ -451,3 +451,113 @@ export async function webDeletarHidratacao(id: string) {
     { method: 'DELETE' }
   );
 }
+
+// ─── Glicose ──────────────────────────────────────────────────────────────────
+
+export type ContextoGlicose = 'JEJUM' | 'PRE_REFEICAO' | 'POS_REFEICAO' | 'ANTES_DORMIR' | 'ALEATORIA';
+export type StatusGlicoseApi = 'BAIXO' | 'NORMAL' | 'ALTO' | 'MUITO_ALTO';
+export type GlucoseStatus = 'low' | 'normal' | 'high' | 'very_high';
+
+export interface ApiGlicose {
+  id: string;
+  usuarioId: string;
+  valor: number;
+  contexto: ContextoGlicose;
+  status: StatusGlicoseApi;
+  data: string;
+  hora: string;
+  notas?: string | null;
+  criadoEm: string;
+  usuario?: { id: string; nome: string; email: string };
+}
+
+export interface ApiGlicoseEstatisticas {
+  media: number;
+  minimo: number;
+  maximo: number;
+  totalRegistros: number;
+  distribuicao: { BAIXO: number; NORMAL: number; ALTO: number; MUITO_ALTO: number };
+  percentual: { normal: number; alto: number; baixo: number };
+}
+
+export interface ApiGlicoseTendencia {
+  data: string;
+  min: number;
+  media: number;
+  max: number;
+}
+
+const STATUS_MAP: Record<StatusGlicoseApi, GlucoseStatus> = {
+  BAIXO: 'low', NORMAL: 'normal', ALTO: 'high', MUITO_ALTO: 'very_high',
+};
+
+const CONTEXTO_MAP: Record<ContextoGlicose, string> = {
+  JEJUM: 'fasting', PRE_REFEICAO: 'before_meal', POS_REFEICAO: 'after_meal',
+  ANTES_DORMIR: 'bedtime', ALEATORIA: 'random',
+};
+
+const APP_CONTEXTO_MAP: Record<string, ContextoGlicose> = {
+  fasting: 'JEJUM', before_meal: 'PRE_REFEICAO', after_meal: 'POS_REFEICAO',
+  bedtime: 'ANTES_DORMIR', random: 'ALEATORIA',
+};
+
+export function glicoseParaRow(g: ApiGlicose) {
+  return {
+    id: g.id,
+    value: g.valor,
+    context: CONTEXTO_MAP[g.contexto] ?? g.contexto,
+    status: STATUS_MAP[g.status] ?? ('normal' as GlucoseStatus),
+    date: g.data,
+    time: g.hora,
+    notes: g.notas ?? undefined,
+    usuario: g.usuario,
+  };
+}
+
+export async function webListarGlicose(pagina = 1, limite = 200) {
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiGlicose> }>(
+    `/glicose?pagina=${pagina}&limite=${limite}`
+  );
+  return res.data;
+}
+
+export async function webListarTodasGlicose(pagina = 1, limite = 200) {
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiGlicose> }>(
+    `/admin/glicose?pagina=${pagina}&limite=${limite}`
+  );
+  return res.data;
+}
+
+export async function webCriarGlicose(payload: {
+  valor: number; contexto: string; data: string; hora: string; notas?: string;
+}) {
+  const res = await apiReq<{ success: boolean; data: ApiGlicose }>(
+    '/glicose',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        ...payload,
+        contexto: APP_CONTEXTO_MAP[payload.contexto] ?? payload.contexto,
+      }),
+    }
+  );
+  return res.data;
+}
+
+export async function webDeletarGlicose(id: string) {
+  await apiReq<{ success: boolean }>(`/glicose/${id}`, { method: 'DELETE' });
+}
+
+export async function webEstatisticasGlicose() {
+  const res = await apiReq<{ success: boolean; data: ApiGlicoseEstatisticas }>(
+    '/glicose/estatisticas'
+  );
+  return res.data;
+}
+
+export async function webTendenciaGlicose() {
+  const res = await apiReq<{ success: boolean; data: ApiGlicoseTendencia[] }>(
+    '/glicose/tendencia'
+  );
+  return res.data;
+}

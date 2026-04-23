@@ -121,6 +121,20 @@ export const glicoseController = {
   },
 
   /**
+   * GET /api/admin/glicose
+   */
+  async listarTodos(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const pagina = Math.max(1, Number(req.query['pagina']) || 1);
+      const limite = Math.min(200, Math.max(1, Number(req.query['limite']) || 50));
+      const resultado = await glicoseModel.listarTodos(pagina, limite);
+      res.json({ success: true, data: resultado });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
    * GET /api/glicose/tendencia
    */
   async tendencia(req: AuthRequest, res: Response, next: NextFunction) {
