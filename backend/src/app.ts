@@ -58,6 +58,15 @@ app.get('/documentacao', (_req, res) => {
   res.send(generateApiDocs(process.env.BASE_URL ?? 'http://localhost:3000'));
 });
 
+// ─── Rota de teste deploy ───────────────────────────────────────────────────────────────
+app.get('/deploy-test', (_req, res) => {
+  res.json({
+    success: true,
+    message: 'Rota de teste para deploy funcionando 1.0.1',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // ─── Rotas da API ──────────────────────────────────────────────────────────────
 app.use('/api', routes);
 

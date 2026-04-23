@@ -1,0 +1,40 @@
+name: Deploy on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'   # dispara quando criar tag tipo v1.0.0
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Executar deploy no servidor
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            echo "🚀 Deploy iniciado"
+
+            cd ~/DSM-P5-G06-2026-01
+
+            git fetch --all
+            git reset --hard origin/main
+
+            echo "📦 Backend..."
+            cd backend
+            npm install
+            npx prisma migrate deploy
+            npm run build
+            pm2 restart backend || pm2 start dist/server.js --name backend
+
+            echo "🌐 Frontend..."
+            cd ../web
+            npm install
+            npm run build
+            pm2 restart frontend || pm2 start npm --name frontend -- start
+
+            echo "✅ Deploy finalizado"

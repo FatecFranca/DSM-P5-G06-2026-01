@@ -20,11 +20,11 @@ async function main() {
   const senhaHash = await bcrypt.hash('admin123', 10);
 
   const admin = await prisma.usuario.upsert({
-    where: { email: 'admin@diabetesCare.com' },
+    where: { email: 'admin@diabetescare.com' },
     update: {},
     create: {
       nome: 'Administrador',
-      email: 'admin@diabetesCare.com',
+      email: 'admin@diabetescare.com',
       senha: senhaHash,
       perfil: 'ADMIN',
       status: 'ATIVO',
