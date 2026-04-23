@@ -5,6 +5,7 @@ import { sonoController } from '../controllers/sonoController';
 import { metasController } from '../controllers/metasController';
 import { hidratacaoController } from '../controllers/hidratacaoController';
 import { glicoseController } from '../controllers/glicoseController';
+import { medicacaoController } from '../controllers/medicacaoController';
 import { autenticar, autorizarAdmin } from '../middlewares/auth';
 
 const router = Router();
@@ -161,5 +162,6 @@ router.get('/metas', metasController.listarTodos);
 
 router.get('/hidratacao', hidratacaoController.listarTodos);
 router.get('/glicose', glicoseController.listarTodos);
+router.get('/medicacao', medicacaoController.listarTodos);
 
 export default router;
