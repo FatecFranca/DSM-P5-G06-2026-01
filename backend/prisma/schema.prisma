@@ -99,6 +99,15 @@ enum Intensidade {
   INTENSA
 }
 
+enum TipoNotificacao {
+  GLICOSE
+  REFEICAO
+  MEDICAMENTO
+  CONSULTA
+  DICA
+  META
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model Usuario {
@@ -126,6 +135,7 @@ model Usuario {
   hidratacoes Hidratacao[]
   medicacoes  Medicacao[]
   exercicios Exercicio[]
+  notificacoes Notificacao[]
 
   @@map("usuarios")
 }
@@ -266,4 +276,19 @@ model Exercicio {
   criadoEm     DateTime @default(now())
 
   @@map("exercicios")
+}
+
+model Notificacao {
+  id         String   @id @default(uuid())
+  usuarioId  String
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  titulo     String
+  mensagem   String
+  tipo       TipoNotificacao
+  data       String 
+  hora       String
+  lida       Boolean  @default(false)
+  criadoEm   DateTime @default(now())
+
+  @@map("notificacoes")
 }

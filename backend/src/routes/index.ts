@@ -11,6 +11,7 @@ import glicoseRoutes from './glicoseRoutes';
 import hidratacaoRoutes from './hidratacaoRoutes';
 import medicacaoRoutes from './medicacaoRoutes';
 import exercicioRoutes from './exercicioRoutes';
+import notificacaoRoutes from './notificacaoRoutes';
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/glicose', glicoseRoutes);
 router.use('/hidratacao', hidratacaoRoutes);
 router.use('/medicacao', medicacaoRoutes);
 router.use('/exercicios', exercicioRoutes);
+router.use('/notificacoes', notificacaoRoutes);
 
 export default router;
