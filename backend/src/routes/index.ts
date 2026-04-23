@@ -10,6 +10,7 @@ import metasRoutes from './metasRoutes';
 import glicoseRoutes from './glicoseRoutes';
 import hidratacaoRoutes from './hidratacaoRoutes';
 import medicacaoRoutes from './medicacaoRoutes';
+import exercicioRoutes from './exercicioRoutes';
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.use('/metas', metasRoutes);
 router.use('/glicose', glicoseRoutes);
 router.use('/hidratacao', hidratacaoRoutes);
 router.use('/medicacao', medicacaoRoutes);
+router.use('/exercicios', exercicioRoutes);
 
 export default router;

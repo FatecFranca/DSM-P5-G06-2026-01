@@ -93,6 +93,12 @@ enum TipoMedicacao {
   OUTRO
 }
 
+enum Intensidade {
+  LEVE
+  MODERADA
+  INTENSA
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model Usuario {
@@ -119,6 +125,7 @@ model Usuario {
   glicoses    Glicose[]
   hidratacoes Hidratacao[]
   medicacoes  Medicacao[]
+  exercicios Exercicio[]
 
   @@map("usuarios")
 }
@@ -243,4 +250,20 @@ model Medicacao {
   atualizadoEm DateTime       @updatedAt
 
   @@map("medicacoes")
+}
+
+model Exercicio {
+  id           String   @id @default(uuid())
+  usuarioId    String
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tipo         String
+  duracao      Int  
+  calorias     Int     
+  data         String
+  hora         String
+  intensidade  Intensidade
+  notas        String?
+  criadoEm     DateTime @default(now())
+
+  @@map("exercicios")
 }

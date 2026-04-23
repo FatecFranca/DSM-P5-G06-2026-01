@@ -8,7 +8,7 @@ export type StatusGlicose = 'BAIXO' | 'NORMAL' | 'ALTO' | 'MUITO_ALTO';
 export type ContextoGlicose = 'JEJUM' | 'PRE_REFEICAO' | 'POS_REFEICAO' | 'ANTES_DORMIR' | 'ALEATORIA';
 export type CategoriaMeta = 'GLICOSE' | 'PESO' | 'EXERCICIO' | 'AGUA' | 'SONO' | 'PASSOS';
 export type TipoMedicacao = 'INSULINA' | 'ORAL' | 'SUPLEMENTO' | 'OUTRO';
-
+export type Intensidade = 'LEVE' | 'MODERADA' | 'INTENSA';
 
 export interface JwtPayload {
   id: string;
