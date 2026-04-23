@@ -5,7 +5,7 @@ import {
 } from '../types';
 import {
   MOCK_USER, MOCK_GLUCOSE, MOCK_MEALS, MOCK_JOURNAL,
-  MOCK_NOTIFICATIONS, MOCK_MEDICATIONS, MOCK_WATER_LOG,
+  MOCK_NOTIFICATIONS, MOCK_WATER_LOG,
   MOCK_EXERCISES,
 } from '../data/mockData';
 import {
@@ -14,6 +14,8 @@ import {
   apiListarHidratacao, apiCriarHidratacao, apiAtualizarHidratacao, apiDeletarHidratacao,
   hidratacaoParaWaterLog,
   apiListarGlicose, apiCriarGlicose, apiDeletarGlicose, glicoseParaReading,
+  apiListarMedicacao, apiCriarMedicacao, apiAtualizarMedicacao, apiDeletarMedicacao,
+  medicacaoParaApp,
   type CategoriaGoal,
 } from '../services/api';
 
@@ -41,7 +43,12 @@ interface AppContextType {
   deleteJournal: (id: string) => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
-  toggleMedication: (id: string) => void;
+  toggleMedication: (id: string) => Promise<void>;
+  loadMedicacoes: () => Promise<void>;
+  medicacoesLoading: boolean;
+  criarMedicacao: (params: { nome: string; dosagem: string; frequencia: string; horarios: string[]; tipo: 'insulin' | 'oral' | 'supplement' | 'other'; notas?: string; cor?: string }) => Promise<void>;
+  editarMedicacao: (id: string, params: { nome?: string; dosagem?: string; frequencia?: string; horarios?: string[]; tipo?: 'insulin' | 'oral' | 'supplement' | 'other'; notas?: string; cor?: string }) => Promise<void>;
+  deletarMedicacao: (id: string) => Promise<void>;
   addWater: (amount: number) => Promise<void>;
   getTodayWater: () => number;
   loadHidratacao: () => Promise<void>;
@@ -88,7 +95,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [meals, setMeals] = useState<MealEntry[]>(MOCK_MEALS);
   const [journals, setJournals] = useState<JournalEntry[]>(MOCK_JOURNAL);
   const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
-  const [medications, setMedications] = useState<Medication[]>(MOCK_MEDICATIONS);
+  const [medications, setMedications] = useState<Medication[]>([]);
+  const [medicacoesLoading, setMedicacoesLoading] = useState(false);
   const [waterLog, setWaterLog] = useState<WaterLog[]>(MOCK_WATER_LOG);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [goalsLoading, setGoalsLoading] = useState(false);
@@ -153,10 +161,48 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   }, []);
 
-  const toggleMedication = useCallback((id: string) => {
+  const loadMedicacoes = useCallback(async () => {
+    setMedicacoesLoading(true);
+    try {
+      const result = await apiListarMedicacao(1, 200);
+      setMedications(result.dados.map(m => medicacaoParaApp(m) as Medication));
+    } catch {
+      // keep current state on error
+    } finally {
+      setMedicacoesLoading(false);
+    }
+  }, []);
+
+  const toggleMedication = useCallback(async (id: string) => {
+    const current = medications.find(m => m.id === id);
+    if (!current) return;
+    const novoTomado = !current.taken;
+    const ultimaTomada = novoTomado ? new Date().toISOString() : null;
     setMedications(prev => prev.map(m =>
-      m.id === id ? { ...m, taken: !m.taken, lastTaken: !m.taken ? new Date().toISOString() : undefined } : m
+      m.id === id ? { ...m, taken: novoTomado, lastTaken: ultimaTomada ?? undefined } : m
     ));
+    try {
+      await apiAtualizarMedicacao(id, { tomado: novoTomado, ultimaTomada });
+    } catch {
+      setMedications(prev => prev.map(m =>
+        m.id === id ? { ...m, taken: current.taken, lastTaken: current.lastTaken } : m
+      ));
+    }
+  }, [medications]);
+
+  const criarMedicacao = useCallback(async (params: { nome: string; dosagem: string; frequencia: string; horarios: string[]; tipo: 'insulin' | 'oral' | 'supplement' | 'other'; notas?: string; cor?: string }) => {
+    const m = await apiCriarMedicacao(params);
+    setMedications(prev => [medicacaoParaApp(m) as Medication, ...prev]);
+  }, []);
+
+  const editarMedicacao = useCallback(async (id: string, params: { nome?: string; dosagem?: string; frequencia?: string; horarios?: string[]; tipo?: 'insulin' | 'oral' | 'supplement' | 'other'; notas?: string; cor?: string }) => {
+    const m = await apiAtualizarMedicacao(id, params);
+    setMedications(prev => prev.map(med => med.id === id ? (medicacaoParaApp(m) as Medication) : med));
+  }, []);
+
+  const deletarMedicacao = useCallback(async (id: string) => {
+    setMedications(prev => prev.filter(m => m.id !== id));
+    await apiDeletarMedicacao(id);
   }, []);
 
   const loadHidratacao = useCallback(async () => {
@@ -292,7 +338,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       waterLog, goals, exercises, sleepEntries, settings, onboarded,
       addGlucoseReading, deleteGlucoseReading, loadGlicose, glicoseLoading, addMeal, deleteMeal,
       addJournal, deleteJournal, markNotificationRead, markAllNotificationsRead,
-      toggleMedication, addWater, getTodayWater, updateSettings, updateUser,
+      toggleMedication, loadMedicacoes, medicacoesLoading, criarMedicacao, editarMedicacao, deletarMedicacao,
+      addWater, getTodayWater, updateSettings, updateUser,
       completeOnboarding, updateGoal, addGoal, editGoalFields, deleteGoal, loadGoals, goalsLoading, addExercise,
       addSleepEntry, updateSleepEntry, deleteSleepEntry, loadSleepEntries, sleepLoading, getAvgSleepDuration,
       loadHidratacao, hidratacaoLoading, criarHidratacao, atualizarHidratacao, deletarHidratacao,

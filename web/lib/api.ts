@@ -561,3 +561,90 @@ export async function webTendenciaGlicose() {
   );
   return res.data;
 }
+
+// ─── Medicação ────────────────────────────────────────────────────────────────
+
+export type TipoMedicacaoApi = 'INSULINA' | 'ORAL' | 'SUPLEMENTO' | 'OUTRO';
+
+export interface ApiMedicacao {
+  id: string;
+  usuarioId: string;
+  nome: string;
+  dosagem: string;
+  frequencia: string;
+  horarios: string[];
+  tipo: TipoMedicacaoApi;
+  notas?: string | null;
+  cor: string;
+  tomado: boolean;
+  ultimaTomada?: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+  usuario?: { id: string; nome: string; email: string };
+}
+
+const TIPO_LABEL_MAP: Record<TipoMedicacaoApi, string> = {
+  INSULINA: 'Insulina',
+  ORAL: 'Oral',
+  SUPLEMENTO: 'Suplemento',
+  OUTRO: 'Outro',
+};
+
+const TIPO_COLOR_MAP: Record<TipoMedicacaoApi, string> = {
+  INSULINA: '#3B8ED0',
+  ORAL: '#8B5CF6',
+  SUPLEMENTO: '#F59E0B',
+  OUTRO: '#9CA3AF',
+};
+
+export function tipoMedicacaoLabel(tipo: TipoMedicacaoApi): string {
+  return TIPO_LABEL_MAP[tipo] ?? tipo;
+}
+
+export function tipoMedicacaoBg(tipo: TipoMedicacaoApi): string {
+  const color = TIPO_COLOR_MAP[tipo] ?? '#9CA3AF';
+  return color + '20';
+}
+
+export function tipoMedicacaoColor(tipo: TipoMedicacaoApi): string {
+  return TIPO_COLOR_MAP[tipo] ?? '#9CA3AF';
+}
+
+export async function webListarMedicacao(pagina = 1, limite = 100) {
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiMedicacao> }>(
+    `/medicacao?pagina=${pagina}&limite=${limite}`
+  );
+  return res.data;
+}
+
+export async function webListarTodasMedicacoes(pagina = 1, limite = 200) {
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiMedicacao> }>(
+    `/admin/medicacao?pagina=${pagina}&limite=${limite}`
+  );
+  return res.data;
+}
+
+export async function webCriarMedicacao(params: {
+  nome: string; dosagem: string; frequencia: string;
+  horarios: string[]; tipo: TipoMedicacaoApi; notas?: string; cor?: string;
+}) {
+  const res = await apiReq<{ success: boolean; data: ApiMedicacao }>(
+    '/medicacao', { method: 'POST', body: JSON.stringify(params) }
+  );
+  return res.data;
+}
+
+export async function webAtualizarMedicacao(id: string, params: Partial<{
+  nome: string; dosagem: string; frequencia: string;
+  horarios: string[]; tipo: TipoMedicacaoApi; notas: string; cor: string;
+  tomado: boolean; ultimaTomada: string | null;
+}>) {
+  const res = await apiReq<{ success: boolean; data: ApiMedicacao }>(
+    `/medicacao/${id}`, { method: 'PUT', body: JSON.stringify(params) }
+  );
+  return res.data;
+}
+
+export async function webDeletarMedicacao(id: string) {
+  await apiReq<{ success: boolean }>(`/medicacao/${id}`, { method: 'DELETE' });
+}

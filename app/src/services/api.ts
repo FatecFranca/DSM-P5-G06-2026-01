@@ -528,3 +528,87 @@ export async function apiCriarGlicose(params: {
 export async function apiDeletarGlicose(id: string) {
   await apiReq<{ success: boolean }>(`/glicose/${id}`, { method: 'DELETE' });
 }
+
+// ─── Medicação ────────────────────────────────────────────────────────────────
+
+export type TipoMedicacaoApi = 'INSULINA' | 'ORAL' | 'SUPLEMENTO' | 'OUTRO';
+type TipoApp = 'insulin' | 'oral' | 'supplement' | 'other';
+
+const TIPO_PARA_APP: Record<TipoMedicacaoApi, TipoApp> = {
+  INSULINA: 'insulin',
+  ORAL: 'oral',
+  SUPLEMENTO: 'supplement',
+  OUTRO: 'other',
+};
+
+const APP_PARA_TIPO: Record<TipoApp, TipoMedicacaoApi> = {
+  insulin: 'INSULINA',
+  oral: 'ORAL',
+  supplement: 'SUPLEMENTO',
+  other: 'OUTRO',
+};
+
+export interface ApiMedicacao {
+  id: string;
+  usuarioId: string;
+  nome: string;
+  dosagem: string;
+  frequencia: string;
+  horarios: string[];
+  tipo: TipoMedicacaoApi;
+  notas?: string | null;
+  cor: string;
+  tomado: boolean;
+  ultimaTomada?: string | null;
+  criadoEm: string;
+}
+
+export function medicacaoParaApp(m: ApiMedicacao) {
+  return {
+    id: m.id,
+    name: m.nome,
+    dosage: m.dosagem,
+    frequency: m.frequencia,
+    times: m.horarios,
+    type: TIPO_PARA_APP[m.tipo] ?? 'other',
+    notes: m.notas ?? undefined,
+    color: m.cor,
+    taken: m.tomado,
+    lastTaken: m.ultimaTomada ?? undefined,
+  };
+}
+
+export async function apiListarMedicacao(pagina = 1, limite = 100) {
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiMedicacao> }>(
+    `/medicacao?pagina=${pagina}&limite=${limite}`
+  );
+  return res.data;
+}
+
+export async function apiCriarMedicacao(params: {
+  nome: string; dosagem: string; frequencia: string;
+  horarios: string[]; tipo: TipoApp; notas?: string; cor?: string;
+}) {
+  const res = await apiReq<{ success: boolean; data: ApiMedicacao }>(
+    '/medicacao',
+    { method: 'POST', body: JSON.stringify({ ...params, tipo: APP_PARA_TIPO[params.tipo] }) }
+  );
+  return res.data;
+}
+
+export async function apiAtualizarMedicacao(id: string, params: {
+  nome?: string; dosagem?: string; frequencia?: string; horarios?: string[];
+  tipo?: TipoApp; notas?: string; cor?: string; tomado?: boolean; ultimaTomada?: string | null;
+}) {
+  const body = { ...params };
+  if (params.tipo) (body as any).tipo = APP_PARA_TIPO[params.tipo];
+  const res = await apiReq<{ success: boolean; data: ApiMedicacao }>(
+    `/medicacao/${id}`,
+    { method: 'PUT', body: JSON.stringify(body) }
+  );
+  return res.data;
+}
+
+export async function apiDeletarMedicacao(id: string) {
+  await apiReq<{ success: boolean }>(`/medicacao/${id}`, { method: 'DELETE' });
+}

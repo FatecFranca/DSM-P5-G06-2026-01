@@ -59,7 +59,7 @@ export default function HomeScreen() {
 
   const getOverallStatus = () => {
     if (!lastReading) return { label: 'Sem dados', color: Colors.textSecondary };
-    if (lastReading.status === 'normal') return { label: 'Bom Controle ✓', color: Colors.success };
+    if (lastReading.status === 'normal') return { label: 'Bom Controle ✓', color: Colors.darkText };
     if (lastReading.status === 'high' || lastReading.status === 'very_high') return { label: 'Atenção!', color: Colors.warning };
     return { label: 'Verificar', color: Colors.secondary };
   };
