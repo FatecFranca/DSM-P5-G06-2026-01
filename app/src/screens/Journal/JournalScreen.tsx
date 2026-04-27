@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -18,10 +18,14 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 const MOODS = ['great', 'good', 'okay', 'bad', 'terrible'] as const;
 
 export default function JournalScreen() {
-  const { journals, deleteJournal } = useApp();
+  const { journals, deleteJournal, loadJournals, journalLoading } = useApp();
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const [moodFilter, setMoodFilter] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadJournals();
+  }, []);
 
   const filtered = moodFilter ? journals.filter(j => j.mood === moodFilter) : journals;
 
@@ -72,7 +76,11 @@ export default function JournalScreen() {
       </LinearGradient>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
-        {filtered.length === 0 ? (
+        {journalLoading ? (
+          <View style={styles.emptyWrap}>
+            <ActivityIndicator size="large" color={Colors.pink} />
+          </View>
+        ) : filtered.length === 0 ? (
           <View style={styles.emptyWrap}>
             <BookOpen size={48} color={Colors.border} />
             <Text style={styles.emptyTitle}>Nenhum registro</Text>

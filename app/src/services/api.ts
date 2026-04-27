@@ -756,6 +756,87 @@ export async function apiDeletarRefeicao(id: string) {
   await apiReq<{ success: boolean }>(`/refeicao/${id}`, { method: 'DELETE' });
 }
 
+// ─── Diário ───────────────────────────────────────────────────────────────────
+
+export type HumorApi = 'OTIMO' | 'BOM' | 'OK' | 'MAL' | 'PESSIMO';
+export type HumorApp = 'great' | 'good' | 'okay' | 'bad' | 'terrible';
+
+const HUMOR_PARA_APP: Record<HumorApi, HumorApp> = {
+  OTIMO:   'great',
+  BOM:     'good',
+  OK:      'okay',
+  MAL:     'bad',
+  PESSIMO: 'terrible',
+};
+
+const APP_PARA_HUMOR: Record<HumorApp, HumorApi> = {
+  great:    'OTIMO',
+  good:     'BOM',
+  okay:     'OK',
+  bad:      'MAL',
+  terrible: 'PESSIMO',
+};
+
+export interface ApiDiario {
+  id: string;
+  usuarioId: string;
+  titulo: string;
+  conteudo: string;
+  humor: HumorApi;
+  sintomas: string[];
+  tags: string[];
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export function diarioParaEntry(d: ApiDiario) {
+  const dt = new Date(d.criadoEm);
+  return {
+    id:       d.id,
+    date:     d.criadoEm.split('T')[0],
+    time:     dt.toTimeString().slice(0, 5),
+    title:    d.titulo,
+    content:  d.conteudo,
+    mood:     HUMOR_PARA_APP[d.humor] ?? 'okay',
+    symptoms: d.sintomas,
+    tags:     d.tags,
+  };
+}
+
+export async function apiListarDiarios(pagina = 1, limite = 100) {
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiDiario> }>(
+    `/diarios?pagina=${pagina}&limite=${limite}`
+  );
+  return res.data;
+}
+
+export async function apiCriarDiario(params: {
+  titulo: string;
+  conteudo: string;
+  humor: HumorApp;
+  sintomas?: string[];
+  tags?: string[];
+}) {
+  const res = await apiReq<{ success: boolean; data: ApiDiario }>(
+    '/diarios',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        titulo:   params.titulo,
+        conteudo: params.conteudo,
+        humor:    APP_PARA_HUMOR[params.humor],
+        sintomas: params.sintomas,
+        tags:     params.tags,
+      }),
+    }
+  );
+  return res.data;
+}
+
+export async function apiDeletarDiario(id: string) {
+  await apiReq<{ success: boolean }>(`/diarios/${id}`, { method: 'DELETE' });
+}
+
 export async function apiBuscarAlimentos(query: string, pagina = 0, max = 20) {
   const params = new URLSearchParams({ q: query, pagina: String(pagina), max: String(max) });
   const res = await apiReq<{ success: boolean; data: { alimentos: ApiAlimento[]; total: number } }>(

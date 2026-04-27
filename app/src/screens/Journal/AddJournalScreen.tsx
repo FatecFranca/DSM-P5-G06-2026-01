@@ -30,22 +30,23 @@ export default function AddJournalScreen() {
   const toggleTag = (t: string) =>
     setTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title.trim() || !content.trim()) return;
     setLoading(true);
-    setTimeout(() => {
-      addJournal({
-        date: '2026-04-06',
-        time: new Date().toTimeString().slice(0, 5),
-        title: title.trim(),
-        content: content.trim(),
+    try {
+      await addJournal({
+        date:     new Date().toISOString().split('T')[0],
+        time:     new Date().toTimeString().slice(0, 5),
+        title:    title.trim(),
+        content:  content.trim(),
         mood,
         symptoms,
         tags,
       });
-      setLoading(false);
       navigation.goBack();
-    }, 500);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

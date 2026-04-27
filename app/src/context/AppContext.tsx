@@ -4,7 +4,7 @@ import {
   Medication, WaterLog, Goal, ExerciseEntry, SleepEntry, AppSettings
 } from '../types';
 import {
-  MOCK_USER, MOCK_GLUCOSE, MOCK_JOURNAL,
+  MOCK_USER, MOCK_GLUCOSE,
   MOCK_NOTIFICATIONS, MOCK_WATER_LOG,
   MOCK_EXERCISES,
 } from '../data/mockData';
@@ -17,8 +17,10 @@ import {
   apiListarMedicacao, apiCriarMedicacao, apiAtualizarMedicacao, apiDeletarMedicacao,
   medicacaoParaApp,
   apiListarRefeicoes, apiCriarRefeicao, apiDeletarRefeicao, refeicaoParaMeal,
+  apiListarDiarios, apiCriarDiario, apiDeletarDiario, diarioParaEntry,
   type CategoriaGoal,
   type FoodCategoryApp,
+  type HumorApp,
 } from '../services/api';
 
 interface AppContextType {
@@ -43,8 +45,10 @@ interface AppContextType {
   deleteMeal: (id: string) => Promise<void>;
   loadRefeicoes: (date: string) => Promise<void>;
   refeicaoLoading: boolean;
-  addJournal: (entry: Omit<JournalEntry, 'id'>) => void;
-  deleteJournal: (id: string) => void;
+  addJournal: (entry: Omit<JournalEntry, 'id'>) => Promise<void>;
+  deleteJournal: (id: string) => Promise<void>;
+  loadJournals: () => Promise<void>;
+  journalLoading: boolean;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   toggleMedication: (id: string) => Promise<void>;
@@ -98,7 +102,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [glicoseLoading, setGlicoseLoading] = useState(false);
   const [meals, setMeals] = useState<MealEntry[]>([]);
   const [refeicaoLoading, setRefeicaoLoading] = useState(false);
-  const [journals, setJournals] = useState<JournalEntry[]>(MOCK_JOURNAL);
+  const [journals, setJournals] = useState<JournalEntry[]>([]);
+  const [journalLoading, setJournalLoading] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
   const [medications, setMedications] = useState<Medication[]>([]);
   const [medicacoesLoading, setMedicacoesLoading] = useState(false);
@@ -188,13 +193,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const addJournal = useCallback((entry: Omit<JournalEntry, 'id'>) => {
-    const newEntry: JournalEntry = { ...entry, id: Date.now().toString() };
-    setJournals(prev => [newEntry, ...prev]);
+  const loadJournals = useCallback(async () => {
+    setJournalLoading(true);
+    try {
+      const result = await apiListarDiarios(1, 100);
+      setJournals(result.dados.map(d => diarioParaEntry(d) as JournalEntry));
+    } catch {
+      // keep current state on error
+    } finally {
+      setJournalLoading(false);
+    }
   }, []);
 
-  const deleteJournal = useCallback((id: string) => {
+  const addJournal = useCallback(async (entry: Omit<JournalEntry, 'id'>) => {
+    const d = await apiCriarDiario({
+      titulo:   entry.title,
+      conteudo: entry.content,
+      humor:    entry.mood as HumorApp,
+      sintomas: entry.symptoms,
+      tags:     entry.tags,
+    });
+    setJournals(prev => [diarioParaEntry(d) as JournalEntry, ...prev]);
+  }, []);
+
+  const deleteJournal = useCallback(async (id: string) => {
     setJournals(prev => prev.filter(j => j.id !== id));
+    await apiDeletarDiario(id);
   }, []);
 
   const markNotificationRead = useCallback((id: string) => {
@@ -382,7 +406,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       waterLog, goals, exercises, sleepEntries, settings, onboarded,
       addGlucoseReading, deleteGlucoseReading, loadGlicose, glicoseLoading,
       addMeal, deleteMeal, loadRefeicoes, refeicaoLoading,
-      addJournal, deleteJournal, markNotificationRead, markAllNotificationsRead,
+      addJournal, deleteJournal, loadJournals, journalLoading,
+      markNotificationRead, markAllNotificationsRead,
       toggleMedication, loadMedicacoes, medicacoesLoading, criarMedicacao, editarMedicacao, deletarMedicacao,
       addWater, getTodayWater, updateSettings, updateUser,
       completeOnboarding, updateGoal, addGoal, editGoalFields, deleteGoal, loadGoals, goalsLoading, addExercise,
