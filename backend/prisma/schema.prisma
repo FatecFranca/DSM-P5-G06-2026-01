@@ -93,6 +93,21 @@ enum TipoMedicacao {
   OUTRO
 }
 
+enum Intensidade {
+  LEVE
+  MODERADA
+  INTENSA
+}
+
+enum TipoNotificacao {
+  GLICOSE
+  REFEICAO
+  MEDICAMENTO
+  CONSULTA
+  DICA
+  META
+}
+
 enum TipoRefeicao {
   CAFE_MANHA
   ALMOCO
@@ -127,7 +142,8 @@ model Usuario {
   hidratacoes Hidratacao[]
   medicacoes  Medicacao[]
   refeicoes   Refeicao[]
-
+  exercicios Exercicio[]
+  notificacoes Notificacao[]
   @@map("usuarios")
 }
 
@@ -251,6 +267,37 @@ model Medicacao {
   atualizadoEm DateTime       @updatedAt
 
   @@map("medicacoes")
+}
+
+model Exercicio {
+  id           String   @id @default(uuid())
+  usuarioId    String
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tipo         String
+  duracao      Int  
+  calorias     Int     
+  data         String
+  hora         String
+  intensidade  Intensidade
+  notas        String?
+  criadoEm     DateTime @default(now())
+
+  @@map("exercicios")
+}
+
+model Notificacao {
+  id         String   @id @default(uuid())
+  usuarioId  String
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  titulo     String
+  mensagem   String
+  tipo       TipoNotificacao
+  data       String 
+  hora       String
+  lida       Boolean  @default(false)
+  criadoEm   DateTime @default(now())
+
+  @@map("notificacoes")
 }
 
 model Refeicao {
