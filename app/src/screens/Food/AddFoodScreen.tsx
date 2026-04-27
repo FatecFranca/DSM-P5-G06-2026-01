@@ -1,10 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
-  FlatList,
+  View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Search, Plus, Minus, Check, X } from 'lucide-react-native';
+import { Search, Check, X } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../theme';
 import { useApp } from '../../context/AppContext';
 import { ScreenHeader } from '../../components/common/ScreenHeader';
@@ -13,8 +12,26 @@ import { Card } from '../../components/common/Card';
 import { FOOD_DATABASE } from '../../data/foodDatabase';
 import { FoodItem, MealType, RootStackParamList } from '../../types';
 import { getFoodCategoryColor, getFoodCategoryLabel, getMealTypeLabel } from '../../utils/helpers';
+import { apiBuscarAlimentos, type ApiAlimento } from '../../services/api';
 
 type Route = RouteProp<RootStackParamList, 'AddFood'>;
+
+function apiAlimentoToFoodItem(a: ApiAlimento): FoodItem {
+  const catMap: Record<string, FoodItem['category']> = {
+    bom: 'good', moderado: 'moderate', ruim: 'bad',
+  };
+  return {
+    id:            a.fatsecretId ?? a.id,
+    name:          a.marca ? `${a.nome} (${a.marca})` : a.nome,
+    calories:      Math.round(a.calorias),
+    carbs:         Math.round(a.carboidratos * 10) / 10,
+    protein:       Math.round(a.proteinas * 10) / 10,
+    fat:           Math.round(a.gorduras * 10) / 10,
+    category:      catMap[a.categoria] ?? 'moderate',
+    portion:       a.porcao,
+    glycemicIndex: a.indiceGlicemico,
+  };
+}
 
 export default function AddFoodScreen() {
   const navigation = useNavigation();
@@ -22,25 +39,60 @@ export default function AddFoodScreen() {
   const { addMeal } = useApp();
   const { mealType, date } = route.params;
 
-  const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<FoodItem[]>([]);
-  const [notes, setNotes] = useState('');
-  const [activeCategory, setActiveCategory] = useState<'all' | 'good' | 'moderate' | 'bad'>('all');
-  const [loading, setLoading] = useState(false);
+  const [search, setSearch]         = useState('');
+  const [selected, setSelected]     = useState<FoodItem[]>([]);
+  const [notes, setNotes]           = useState('');
+  const [loading, setLoading]       = useState(false);
+  const [searching, setSearching]   = useState(false);
+  const [fatResults, setFatResults] = useState<FoodItem[]>([]);
+  const debounceRef                 = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const filtered = useMemo(() => {
+  // Debounced FatSecret search
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (search.trim().length < 2) {
+      setFatResults([]);
+      setSearching(false);
+      return;
+    }
+
+    setSearching(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const result = await apiBuscarAlimentos(search.trim(), 0, 20);
+        setFatResults(result.alimentos.map(apiAlimentoToFoodItem));
+      } catch {
+        setFatResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 500);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [search]);
+
+  // When no active search, show local database filtered by category
+  const [activeCategory, setActiveCategory] = useState<'all' | 'good' | 'moderate' | 'bad'>('all');
+
+  const localFiltered = useMemo(() => {
+    if (search.trim().length >= 2) return [];
     return FOOD_DATABASE.filter(f => {
-      const matchSearch = f.name.toLowerCase().includes(search.toLowerCase());
       const matchCat = activeCategory === 'all' || f.category === activeCategory;
-      return matchSearch && matchCat;
+      return matchCat;
     });
   }, [search, activeCategory]);
+
+  const displayList: FoodItem[] = search.trim().length >= 2 ? fatResults : localFiltered;
+  const isSearchMode = search.trim().length >= 2;
 
   const toggleFood = (food: FoodItem) => {
     setSelected(prev =>
       prev.find(f => f.id === food.id)
         ? prev.filter(f => f.id !== food.id)
-        : [...prev, food]
+        : [...prev, food],
     );
   };
 
@@ -51,29 +103,32 @@ export default function AddFoodScreen() {
   const totalProt = selected.reduce((s, f) => s + f.protein, 0);
   const totalFat  = selected.reduce((s, f) => s + f.fat, 0);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (selected.length === 0) return;
     setLoading(true);
-    setTimeout(() => {
-      addMeal({
-        type: mealType,
+    try {
+      await addMeal({
+        type:          mealType,
         date,
-        time: new Date().toTimeString().slice(0, 5),
-        foods: selected,
+        time:          new Date().toTimeString().slice(0, 5),
+        foods:         selected,
         totalCalories: totalCal,
-        totalCarbs: totalCarb,
-        notes: notes.trim() || undefined,
+        totalCarbs:    totalCarb,
+        notes:         notes.trim() || undefined,
       });
-      setLoading(false);
       navigation.goBack();
-    }, 500);
+    } catch {
+      // silently ignore — user stays on screen
+    } finally {
+      setLoading(false);
+    }
   };
 
   const cats: Array<{ key: typeof activeCategory; label: string }> = [
-    { key: 'all', label: 'Todos' },
-    { key: 'good', label: 'Saudável' },
+    { key: 'all',      label: 'Todos' },
+    { key: 'good',     label: 'Saudável' },
     { key: 'moderate', label: 'Moderado' },
-    { key: 'bad', label: 'Evitar' },
+    { key: 'bad',      label: 'Evitar' },
   ];
 
   return (
@@ -86,31 +141,39 @@ export default function AddFoodScreen() {
           <Search size={18} color={Colors.textSecondary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Buscar alimento..."
+            placeholder="Buscar alimento (FatSecret)..."
             placeholderTextColor={Colors.textLight}
             value={search}
             onChangeText={setSearch}
           />
-          {search.length > 0 && (
+          {searching && <ActivityIndicator size="small" color={Colors.primary} />}
+          {search.length > 0 && !searching && (
             <TouchableOpacity onPress={() => setSearch('')}>
               <X size={16} color={Colors.textLight} />
             </TouchableOpacity>
           )}
         </View>
+        {isSearchMode && (
+          <Text style={styles.searchHint}>
+            {searching ? 'Buscando...' : `${fatResults.length} resultado(s) encontrado(s)`}
+          </Text>
+        )}
       </View>
 
-      {/* Category filter */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catBar} contentContainerStyle={styles.catBarContent}>
-        {cats.map(c => (
-          <TouchableOpacity
-            key={c.key}
-            style={[styles.catBtn, activeCategory === c.key && styles.catBtnActive]}
-            onPress={() => setActiveCategory(c.key)}
-          >
-            <Text style={[styles.catText, activeCategory === c.key && styles.catTextActive]}>{c.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {/* Category filter — only when not in search mode */}
+      {!isSearchMode && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catBar} contentContainerStyle={styles.catBarContent}>
+          {cats.map(c => (
+            <TouchableOpacity
+              key={c.key}
+              style={[styles.catBtn, activeCategory === c.key && styles.catBtnActive]}
+              onPress={() => setActiveCategory(c.key)}
+            >
+              <Text style={[styles.catText, activeCategory === c.key && styles.catTextActive]}>{c.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
 
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
         {/* Selected summary */}
@@ -130,7 +193,6 @@ export default function AddFoodScreen() {
                 </View>
               ))}
             </View>
-            {/* Selected chips */}
             <View style={styles.chips}>
               {selected.map(f => (
                 <TouchableOpacity key={f.id} style={styles.chip} onPress={() => toggleFood(f)}>
@@ -144,7 +206,7 @@ export default function AddFoodScreen() {
 
         {/* Food list */}
         <View style={styles.foodList}>
-          {filtered.map(food => {
+          {displayList.map(food => {
             const sel = isSelected(food.id);
             const catColor = getFoodCategoryColor(food.category);
             return (
@@ -173,6 +235,12 @@ export default function AddFoodScreen() {
               </TouchableOpacity>
             );
           })}
+
+          {isSearchMode && !searching && fatResults.length === 0 && (
+            <View style={styles.emptySearch}>
+              <Text style={styles.emptySearchText}>Nenhum alimento encontrado para "{search}"</Text>
+            </View>
+          )}
         </View>
 
         {/* Notes */}
@@ -189,7 +257,12 @@ export default function AddFoodScreen() {
         </View>
 
         <View style={styles.actions}>
-          <Button title={`Salvar Refeição (${selected.length})`} onPress={handleSave} loading={loading} disabled={selected.length === 0} />
+          <Button
+            title={`Salvar Refeição (${selected.length})`}
+            onPress={handleSave}
+            loading={loading}
+            disabled={selected.length === 0}
+          />
         </View>
         <View style={{ height: 32 }} />
       </ScrollView>
@@ -198,9 +271,10 @@ export default function AddFoodScreen() {
 }
 
 const styles = StyleSheet.create({
-  searchWrap: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, backgroundColor: Colors.card, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  searchWrap: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: 8, backgroundColor: Colors.card, borderBottomWidth: 1, borderBottomColor: Colors.border },
   searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.background, borderRadius: BorderRadius.md, paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
   searchInput: { flex: 1, fontSize: FontSize.md, color: Colors.text },
+  searchHint: { fontSize: FontSize.xs, color: Colors.textSecondary, marginTop: 6, marginLeft: 4 },
   catBar: { backgroundColor: Colors.card, maxHeight: 50 },
   catBarContent: { paddingHorizontal: Spacing.lg, paddingVertical: 8, gap: 8 },
   catBtn: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: BorderRadius.full, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border },
@@ -231,6 +305,8 @@ const styles = StyleSheet.create({
   foodCarb: { fontSize: FontSize.xs, color: Colors.textSecondary },
   checkCircle: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
   checkCircleActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  emptySearch: { paddingVertical: 24, alignItems: 'center' },
+  emptySearchText: { fontSize: FontSize.sm, color: Colors.textSecondary, textAlign: 'center' },
   notesWrap: { margin: Spacing.lg },
   notesLabel: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: Colors.text, marginBottom: Spacing.sm },
   notesInput: { borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: FontSize.md, color: Colors.text, minHeight: 70, textAlignVertical: 'top' },

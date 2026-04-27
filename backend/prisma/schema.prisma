@@ -93,6 +93,13 @@ enum TipoMedicacao {
   OUTRO
 }
 
+enum TipoRefeicao {
+  CAFE_MANHA
+  ALMOCO
+  JANTAR
+  LANCHE
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model Usuario {
@@ -119,6 +126,7 @@ model Usuario {
   glicoses    Glicose[]
   hidratacoes Hidratacao[]
   medicacoes  Medicacao[]
+  refeicoes   Refeicao[]
 
   @@map("usuarios")
 }
@@ -243,4 +251,23 @@ model Medicacao {
   atualizadoEm DateTime       @updatedAt
 
   @@map("medicacoes")
+}
+
+model Refeicao {
+  id             String       @id @default(uuid())
+  usuarioId      String
+  usuario        Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tipo           TipoRefeicao
+  data           String
+  hora           String
+  alimentos      Json
+  totalCalorias  Float        @default(0)
+  totalCarbs     Float        @default(0)
+  totalProteinas Float        @default(0)
+  totalGorduras  Float        @default(0)
+  notas          String?
+  criadoEm       DateTime     @default(now())
+  atualizadoEm   DateTime     @updatedAt
+
+  @@map("refeicoes")
 }

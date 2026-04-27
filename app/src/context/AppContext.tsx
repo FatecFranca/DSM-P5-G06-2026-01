@@ -4,7 +4,7 @@ import {
   Medication, WaterLog, Goal, ExerciseEntry, SleepEntry, AppSettings
 } from '../types';
 import {
-  MOCK_USER, MOCK_GLUCOSE, MOCK_MEALS, MOCK_JOURNAL,
+  MOCK_USER, MOCK_GLUCOSE, MOCK_JOURNAL,
   MOCK_NOTIFICATIONS, MOCK_WATER_LOG,
   MOCK_EXERCISES,
 } from '../data/mockData';
@@ -16,7 +16,9 @@ import {
   apiListarGlicose, apiCriarGlicose, apiDeletarGlicose, glicoseParaReading,
   apiListarMedicacao, apiCriarMedicacao, apiAtualizarMedicacao, apiDeletarMedicacao,
   medicacaoParaApp,
+  apiListarRefeicoes, apiCriarRefeicao, apiDeletarRefeicao, refeicaoParaMeal,
   type CategoriaGoal,
+  type FoodCategoryApp,
 } from '../services/api';
 
 interface AppContextType {
@@ -37,8 +39,10 @@ interface AppContextType {
   deleteGlucoseReading: (id: string) => Promise<void>;
   loadGlicose: () => Promise<void>;
   glicoseLoading: boolean;
-  addMeal: (meal: Omit<MealEntry, 'id'>) => void;
-  deleteMeal: (id: string) => void;
+  addMeal: (meal: Omit<MealEntry, 'id'>) => Promise<void>;
+  deleteMeal: (id: string) => Promise<void>;
+  loadRefeicoes: (date: string) => Promise<void>;
+  refeicaoLoading: boolean;
   addJournal: (entry: Omit<JournalEntry, 'id'>) => void;
   deleteJournal: (id: string) => void;
   markNotificationRead: (id: string) => void;
@@ -92,7 +96,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User>(MOCK_USER);
   const [glucoseReadings, setGlucoseReadings] = useState<GlucoseReading[]>([]);
   const [glicoseLoading, setGlicoseLoading] = useState(false);
-  const [meals, setMeals] = useState<MealEntry[]>(MOCK_MEALS);
+  const [meals, setMeals] = useState<MealEntry[]>([]);
+  const [refeicaoLoading, setRefeicaoLoading] = useState(false);
   const [journals, setJournals] = useState<JournalEntry[]>(MOCK_JOURNAL);
   const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
   const [medications, setMedications] = useState<Medication[]>([]);
@@ -135,13 +140,52 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await apiDeletarGlicose(id);
   }, []);
 
-  const addMeal = useCallback((meal: Omit<MealEntry, 'id'>) => {
-    const newMeal: MealEntry = { ...meal, id: Date.now().toString() };
-    setMeals(prev => [newMeal, ...prev]);
+  const loadRefeicoes = useCallback(async (date: string) => {
+    setRefeicaoLoading(true);
+    try {
+      const result = await apiListarRefeicoes(1, 100, date);
+      setMeals(result.dados.map(r => refeicaoParaMeal(r) as MealEntry));
+    } catch {
+      // keep current state on error
+    } finally {
+      setRefeicaoLoading(false);
+    }
   }, []);
 
-  const deleteMeal = useCallback((id: string) => {
+  const addMeal = useCallback(async (meal: Omit<MealEntry, 'id'>) => {
+    const totalProteinas = meal.foods.reduce((s, f) => s + f.protein, 0);
+    const totalGorduras  = meal.foods.reduce((s, f) => s + f.fat, 0);
+    const refeicao = await apiCriarRefeicao({
+      tipo:      meal.type as any,
+      data:      meal.date,
+      hora:      meal.time,
+      alimentos: meal.foods.map(f => ({
+        id:           f.id,
+        name:         f.name,
+        calories:     f.calories,
+        carbs:        f.carbs,
+        protein:      f.protein,
+        fat:          f.fat,
+        category:     f.category as FoodCategoryApp,
+        portion:      f.portion,
+        glycemicIndex: f.glycemicIndex,
+      })),
+      totalCalorias:  meal.totalCalories,
+      totalCarbs:     meal.totalCarbs,
+      totalProteinas,
+      totalGorduras,
+      notas:          meal.notes,
+    });
+    setMeals(prev => [refeicaoParaMeal(refeicao) as MealEntry, ...prev]);
+  }, []);
+
+  const deleteMeal = useCallback(async (id: string) => {
     setMeals(prev => prev.filter(m => m.id !== id));
+    try {
+      await apiDeletarRefeicao(id);
+    } catch {
+      // já removido localmente, não precisa reverter
+    }
   }, []);
 
   const addJournal = useCallback((entry: Omit<JournalEntry, 'id'>) => {
@@ -336,7 +380,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     <AppContext.Provider value={{
       user, glucoseReadings, meals, journals, notifications, medications,
       waterLog, goals, exercises, sleepEntries, settings, onboarded,
-      addGlucoseReading, deleteGlucoseReading, loadGlicose, glicoseLoading, addMeal, deleteMeal,
+      addGlucoseReading, deleteGlucoseReading, loadGlicose, glicoseLoading,
+      addMeal, deleteMeal, loadRefeicoes, refeicaoLoading,
       addJournal, deleteJournal, markNotificationRead, markAllNotificationsRead,
       toggleMedication, loadMedicacoes, medicacoesLoading, criarMedicacao, editarMedicacao, deletarMedicacao,
       addWater, getTodayWater, updateSettings, updateUser,

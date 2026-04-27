@@ -649,3 +649,91 @@ export async function webAtualizarMedicacao(id: string, params: Partial<{
 export async function webDeletarMedicacao(id: string) {
   await apiReq<{ success: boolean }>(`/medicacao/${id}`, { method: 'DELETE' });
 }
+
+// ─── Refeição ─────────────────────────────────────────────────────────────────
+
+export type TipoRefeicaoApi   = 'CAFE_MANHA' | 'ALMOCO' | 'JANTAR' | 'LANCHE';
+export type CategoriaAlimento = 'bom' | 'moderado' | 'ruim';
+
+export const TIPO_REFEICAO_LABEL: Record<TipoRefeicaoApi, string> = {
+  CAFE_MANHA: 'Café da manhã',
+  ALMOCO:     'Almoço',
+  JANTAR:     'Jantar',
+  LANCHE:     'Lanche',
+};
+
+export const TIPO_REFEICAO_ICON: Record<TipoRefeicaoApi, string> = {
+  CAFE_MANHA: '🌅',
+  ALMOCO:     '☀️',
+  JANTAR:     '🌙',
+  LANCHE:     '☕',
+};
+
+export const TIPO_REFEICAO_COLOR: Record<TipoRefeicaoApi, string> = {
+  CAFE_MANHA: '#F97316',
+  ALMOCO:     '#F59E0B',
+  JANTAR:     '#3B8ED0',
+  LANCHE:     '#4CAF82',
+};
+
+export interface ApiAlimentoItem {
+  id: string;
+  nome: string;
+  marca?: string;
+  calorias: number;
+  carboidratos: number;
+  proteinas: number;
+  gorduras: number;
+  categoria: CategoriaAlimento;
+  porcao: string;
+  fatsecretId?: string;
+  indiceGlicemico?: number;
+}
+
+export interface ApiRefeicao {
+  id: string;
+  usuarioId: string;
+  tipo: TipoRefeicaoApi;
+  data: string;
+  hora: string;
+  alimentos: ApiAlimentoItem[];
+  totalCalorias: number;
+  totalCarbs: number;
+  totalProteinas: number;
+  totalGorduras: number;
+  notas?: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+  usuario?: { id: string; nome: string; email: string };
+}
+
+export async function webListarRefeicoes(pagina = 1, limite = 100, data?: string, tipo?: TipoRefeicaoApi) {
+  const params = new URLSearchParams({ pagina: String(pagina), limite: String(limite) });
+  if (data) params.set('data', data);
+  if (tipo) params.set('tipo', tipo);
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiRefeicao> }>(
+    `/refeicao?${params}`
+  );
+  return res.data;
+}
+
+export async function webListarTodasRefeicoes(pagina = 1, limite = 200, tipo?: TipoRefeicaoApi) {
+  const params = new URLSearchParams({ pagina: String(pagina), limite: String(limite) });
+  if (tipo) params.set('tipo', tipo);
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiRefeicao> }>(
+    `/admin/refeicao?${params}`
+  );
+  return res.data;
+}
+
+export async function webDeletarRefeicao(id: string) {
+  await apiReq<{ success: boolean }>(`/refeicao/${id}`, { method: 'DELETE' });
+}
+
+export async function webBuscarAlimentos(query: string, pagina = 0, max = 20) {
+  const params = new URLSearchParams({ q: query, pagina: String(pagina), max: String(max) });
+  const res = await apiReq<{ success: boolean; data: { alimentos: ApiAlimentoItem[]; total: number } }>(
+    `/refeicao/buscar-alimento?${params}`
+  );
+  return res.data;
+}

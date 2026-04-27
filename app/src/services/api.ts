@@ -612,3 +612,154 @@ export async function apiAtualizarMedicacao(id: string, params: {
 export async function apiDeletarMedicacao(id: string) {
   await apiReq<{ success: boolean }>(`/medicacao/${id}`, { method: 'DELETE' });
 }
+
+// ─── Refeição ─────────────────────────────────────────────────────────────────
+
+export type TipoRefeicaoApi   = 'CAFE_MANHA' | 'ALMOCO' | 'JANTAR' | 'LANCHE';
+export type MealTypeApp       = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+export type CategoriaAlimento = 'bom' | 'moderado' | 'ruim';
+export type FoodCategoryApp   = 'good' | 'moderate' | 'bad';
+
+const TIPO_PARA_MEAL: Record<TipoRefeicaoApi, MealTypeApp> = {
+  CAFE_MANHA: 'breakfast',
+  ALMOCO:     'lunch',
+  JANTAR:     'dinner',
+  LANCHE:     'snack',
+};
+
+const MEAL_PARA_TIPO: Record<MealTypeApp, TipoRefeicaoApi> = {
+  breakfast: 'CAFE_MANHA',
+  lunch:     'ALMOCO',
+  dinner:    'JANTAR',
+  snack:     'LANCHE',
+};
+
+const CAT_PARA_FOOD: Record<CategoriaAlimento, FoodCategoryApp> = {
+  bom:      'good',
+  moderado: 'moderate',
+  ruim:     'bad',
+};
+
+const FOOD_PARA_CAT: Record<FoodCategoryApp, CategoriaAlimento> = {
+  good:     'bom',
+  moderate: 'moderado',
+  bad:      'ruim',
+};
+
+export interface ApiAlimento {
+  id: string;
+  nome: string;
+  marca?: string;
+  calorias: number;
+  carboidratos: number;
+  proteinas: number;
+  gorduras: number;
+  categoria: CategoriaAlimento;
+  porcao: string;
+  fatsecretId?: string;
+  indiceGlicemico?: number;
+}
+
+export interface ApiRefeicao {
+  id: string;
+  usuarioId: string;
+  tipo: TipoRefeicaoApi;
+  data: string;
+  hora: string;
+  alimentos: ApiAlimento[];
+  totalCalorias: number;
+  totalCarbs: number;
+  totalProteinas: number;
+  totalGorduras: number;
+  notas?: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export function refeicaoParaMeal(r: ApiRefeicao) {
+  return {
+    id:           r.id,
+    type:         TIPO_PARA_MEAL[r.tipo],
+    date:         r.data,
+    time:         r.hora,
+    foods: (r.alimentos as ApiAlimento[]).map(a => ({
+      id:           a.id,
+      name:         a.nome,
+      calories:     a.calorias,
+      carbs:        a.carboidratos,
+      protein:      a.proteinas,
+      fat:          a.gorduras,
+      category:     (CAT_PARA_FOOD[a.categoria] ?? 'moderate') as FoodCategoryApp,
+      portion:      a.porcao,
+      glycemicIndex: a.indiceGlicemico,
+    })),
+    totalCalories: r.totalCalorias,
+    totalCarbs:    r.totalCarbs,
+    notes:         r.notas ?? undefined,
+  };
+}
+
+export async function apiListarRefeicoes(pagina = 1, limite = 100, data?: string, tipo?: TipoRefeicaoApi) {
+  const params = new URLSearchParams({ pagina: String(pagina), limite: String(limite) });
+  if (data) params.set('data', data);
+  if (tipo) params.set('tipo', tipo);
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiRefeicao> }>(
+    `/refeicao?${params}`,
+  );
+  return res.data;
+}
+
+export async function apiCriarRefeicao(params: {
+  tipo: MealTypeApp;
+  data: string;
+  hora: string;
+  alimentos: Array<{
+    id: string; name: string; calories: number; carbs: number;
+    protein: number; fat: number; category: FoodCategoryApp; portion: string;
+    glycemicIndex?: number;
+  }>;
+  totalCalorias: number;
+  totalCarbs: number;
+  totalProteinas: number;
+  totalGorduras: number;
+  notas?: string;
+}) {
+  const body = {
+    tipo:      MEAL_PARA_TIPO[params.tipo],
+    data:      params.data,
+    hora:      params.hora,
+    alimentos: params.alimentos.map(f => ({
+      id:           f.id,
+      nome:         f.name,
+      calorias:     f.calories,
+      carboidratos: f.carbs,
+      proteinas:    f.protein,
+      gorduras:     f.fat,
+      categoria:    FOOD_PARA_CAT[f.category],
+      porcao:       f.portion,
+      indiceGlicemico: f.glycemicIndex,
+    })),
+    totalCalorias:  params.totalCalorias,
+    totalCarbs:     params.totalCarbs,
+    totalProteinas: params.totalProteinas,
+    totalGorduras:  params.totalGorduras,
+    notas:          params.notas,
+  };
+  const res = await apiReq<{ success: boolean; data: ApiRefeicao }>(
+    '/refeicao',
+    { method: 'POST', body: JSON.stringify(body) },
+  );
+  return res.data;
+}
+
+export async function apiDeletarRefeicao(id: string) {
+  await apiReq<{ success: boolean }>(`/refeicao/${id}`, { method: 'DELETE' });
+}
+
+export async function apiBuscarAlimentos(query: string, pagina = 0, max = 20) {
+  const params = new URLSearchParams({ q: query, pagina: String(pagina), max: String(max) });
+  const res = await apiReq<{ success: boolean; data: { alimentos: ApiAlimento[]; total: number } }>(
+    `/refeicao/buscar-alimento?${params}`,
+  );
+  return res.data;
+}

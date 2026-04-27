@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   Plus, Sunrise, Sun, Moon, Coffee, Trash2,
-  Flame, ChevronRight, TrendingUp,
+  Flame, TrendingUp,
 } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '../../theme';
 import { useApp } from '../../context/AppContext';
 import { Card } from '../../components/common/Card';
 import { ProgressBar } from '../../components/common/ProgressBar';
 import { RootStackParamList, MealType, MealEntry } from '../../types';
-import { getMealTypeLabel, getFoodCategoryColor, getRelativeDate } from '../../utils/helpers';
+import { getMealTypeLabel, getFoodCategoryColor } from '../../utils/helpers';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -38,14 +38,28 @@ const CARB_GOAL    = 200;
 const PROTEIN_GOAL = 100;
 const FAT_GOAL     = 60;
 
-const DATES = ['2026-04-06', '2026-04-05', '2026-04-04'];
+function getDynamicDates() {
+  const today = new Date();
+  return [0, 1, 2].map(offset => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - offset);
+    return d.toISOString().split('T')[0];
+  });
+}
+
 const DATE_LABELS = ['Hoje', 'Ontem', 'Anteontem'];
 
 export default function FoodDiaryScreen() {
-  const { meals, deleteMeal } = useApp();
+  const { meals, deleteMeal, loadRefeicoes, refeicaoLoading } = useApp();
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
+
+  const DATES = useMemo(() => getDynamicDates(), []);
   const [selectedDate, setSelectedDate] = useState(DATES[0]);
+
+  useEffect(() => {
+    loadRefeicoes(selectedDate);
+  }, [selectedDate, loadRefeicoes]);
 
   const dayMeals = meals.filter(m => m.date === selectedDate);
   const totalCal  = dayMeals.reduce((s, m) => s + m.totalCalories, 0);
@@ -101,132 +115,143 @@ export default function FoodDiaryScreen() {
         </View>
       </LinearGradient>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Macro summary */}
-        <Card style={styles.macroCard}>
-          <View style={styles.macroHeader}>
-            <View style={styles.calorieCircle}>
-              <Text style={styles.calValue}>{totalCal}</Text>
-              <Text style={styles.calUnit}>kcal</Text>
-              <Text style={styles.calMeta}>de {CALORIE_GOAL}</Text>
-            </View>
-            <View style={styles.macroDetails}>
-              {[
-                { label: 'Carboidratos', value: totalCarb, goal: CARB_GOAL, color: Colors.warning },
-                { label: 'Proteínas',    value: totalProt, goal: PROTEIN_GOAL, color: Colors.primary },
-                { label: 'Gorduras',     value: totalFat,  goal: FAT_GOAL,     color: Colors.secondary },
-              ].map(m => (
-                <View key={m.label} style={styles.macroRow}>
-                  <View style={styles.macroLabelRow}>
-                    <Text style={styles.macroName}>{m.label}</Text>
-                    <Text style={[styles.macroVal, { color: m.color }]}>{m.value}g</Text>
-                  </View>
-                  <ProgressBar progress={m.value / m.goal} color={m.color} height={5} />
-                </View>
-              ))}
-            </View>
-          </View>
-        </Card>
-
-        {/* Meals by type */}
-        <View style={styles.mealsSection}>
-          {MEAL_ORDER.map(type => {
-            const typeMeals = mealsByType[type];
-            return (
-              <View key={type} style={styles.mealGroup}>
-                {/* Meal type header */}
-                <View style={styles.mealTypeHeader}>
-                  <View style={styles.mealTypeLeft}>
-                    {MEAL_ICONS[type]}
-                    <Text style={styles.mealTypeName}>{getMealTypeLabel(type)}</Text>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.addMealBtn}
-                    onPress={() => navigation.navigate('AddFood' as any, { mealType: type, date: selectedDate })}
-                  >
-                    <Plus size={14} color={Colors.primary} />
-                    <Text style={styles.addMealText}>Adicionar</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {typeMeals.length === 0 ? (
-                  <TouchableOpacity
-                    style={styles.emptyMeal}
-                    onPress={() => navigation.navigate('AddFood' as any, { mealType: type, date: selectedDate })}
-                  >
-                    <Text style={styles.emptyMealText}>Toque para registrar {getMealTypeLabel(type).toLowerCase()}</Text>
-                  </TouchableOpacity>
-                ) : (
-                  typeMeals.map(meal => (
-                    <Card key={meal.id} style={styles.mealCard} padding={14}>
-                      <View style={styles.mealCardHeader}>
-                        <LinearGradient
-                          colors={MEAL_COLORS[meal.type] as [string, string]}
-                          style={styles.mealTimeTag}
-                        >
-                          <Text style={styles.mealTimeText}>{meal.time}</Text>
-                        </LinearGradient>
-                        <View style={styles.mealStats}>
-                          <View style={styles.mealStat}>
-                            <Flame size={12} color={Colors.danger} />
-                            <Text style={styles.mealStatText}>{meal.totalCalories} kcal</Text>
-                          </View>
-                          <Text style={styles.mealStatDot}>·</Text>
-                          <Text style={styles.mealStatText}>{meal.totalCarbs}g carbs</Text>
-                        </View>
-                        <TouchableOpacity onPress={() => handleDelete(meal.id)}>
-                          <Trash2 size={15} color={Colors.textLight} />
-                        </TouchableOpacity>
-                      </View>
-
-                      {meal.foods.map(food => (
-                        <View key={food.id} style={styles.foodRow}>
-                          <View style={[styles.foodDot, { backgroundColor: getFoodCategoryColor(food.category) }]} />
-                          <Text style={styles.foodName} numberOfLines={1}>{food.name}</Text>
-                          <Text style={styles.foodPortion}>{food.portion}</Text>
-                          <Text style={styles.foodCal}>{food.calories} kcal</Text>
-                        </View>
-                      ))}
-
-                      {meal.notes && (
-                        <Text style={styles.mealNote}>📝 {meal.notes}</Text>
-                      )}
-                    </Card>
-                  ))
-                )}
-              </View>
-            );
-          })}
+      {refeicaoLoading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={Colors.orange} />
         </View>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Macro summary */}
+          <Card style={styles.macroCard}>
+            <View style={styles.macroHeader}>
+              <View style={styles.calorieCircle}>
+                <Text style={styles.calValue}>{totalCal}</Text>
+                <Text style={styles.calUnit}>kcal</Text>
+                <Text style={styles.calMeta}>de {CALORIE_GOAL}</Text>
+              </View>
+              <View style={styles.macroDetails}>
+                {[
+                  { label: 'Carboidratos', value: totalCarb, goal: CARB_GOAL,    color: Colors.warning },
+                  { label: 'Proteínas',    value: totalProt, goal: PROTEIN_GOAL, color: Colors.primary },
+                  { label: 'Gorduras',     value: totalFat,  goal: FAT_GOAL,     color: Colors.secondary },
+                ].map(m => (
+                  <View key={m.label} style={styles.macroRow}>
+                    <View style={styles.macroLabelRow}>
+                      <Text style={styles.macroName}>{m.label}</Text>
+                      <Text style={[styles.macroVal, { color: m.color }]}>{Math.round(m.value)}g</Text>
+                    </View>
+                    <ProgressBar progress={m.value / m.goal} color={m.color} height={5} />
+                  </View>
+                ))}
+              </View>
+            </View>
+          </Card>
 
-        {/* Glycemic load info */}
-        <Card style={styles.infoCard}>
-          <View style={styles.infoHeader}>
-            <TrendingUp size={18} color={Colors.secondary} />
-            <Text style={styles.infoTitle}>Carga Glicêmica do Dia</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <Text style={[styles.infoValue, { color: totalCarb < 150 ? Colors.primary : totalCarb < 200 ? Colors.warning : Colors.danger }]}>
-                {totalCarb < 150 ? 'Baixa' : totalCarb < 200 ? 'Moderada' : 'Alta'}
-              </Text>
-              <Text style={styles.infoLabel}>Carga Glicêmica</Text>
-            </View>
-            <View style={styles.infoDivider} />
-            <View style={styles.infoItem}>
-              <Text style={[styles.infoValue, { color: Colors.orange }]}>{totalCarb}g</Text>
-              <Text style={styles.infoLabel}>Total de Carbs</Text>
-            </View>
-            <View style={styles.infoDivider} />
-            <View style={styles.infoItem}>
-              <Text style={[styles.infoValue, { color: Colors.secondary }]}>{CARB_GOAL - totalCarb}g</Text>
-              <Text style={styles.infoLabel}>Restante</Text>
-            </View>
-          </View>
-        </Card>
+          {/* Meals by type */}
+          <View style={styles.mealsSection}>
+            {MEAL_ORDER.map(type => {
+              const typeMeals = mealsByType[type];
+              return (
+                <View key={type} style={styles.mealGroup}>
+                  <View style={styles.mealTypeHeader}>
+                    <View style={styles.mealTypeLeft}>
+                      {MEAL_ICONS[type]}
+                      <Text style={styles.mealTypeName}>{getMealTypeLabel(type)}</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.addMealBtn}
+                      onPress={() => navigation.navigate('AddFood' as any, { mealType: type, date: selectedDate })}
+                    >
+                      <Plus size={14} color={Colors.primary} />
+                      <Text style={styles.addMealText}>Adicionar</Text>
+                    </TouchableOpacity>
+                  </View>
 
-        <View style={{ height: 32 }} />
-      </ScrollView>
+                  {typeMeals.length === 0 ? (
+                    <TouchableOpacity
+                      style={styles.emptyMeal}
+                      onPress={() => navigation.navigate('AddFood' as any, { mealType: type, date: selectedDate })}
+                    >
+                      <Text style={styles.emptyMealText}>
+                        Toque para registrar {getMealTypeLabel(type).toLowerCase()}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    typeMeals.map(meal => (
+                      <Card key={meal.id} style={styles.mealCard} padding={14}>
+                        <View style={styles.mealCardHeader}>
+                          <LinearGradient
+                            colors={MEAL_COLORS[meal.type] as [string, string]}
+                            style={styles.mealTimeTag}
+                          >
+                            <Text style={styles.mealTimeText}>{meal.time}</Text>
+                          </LinearGradient>
+                          <View style={styles.mealStats}>
+                            <View style={styles.mealStat}>
+                              <Flame size={12} color={Colors.danger} />
+                              <Text style={styles.mealStatText}>{meal.totalCalories} kcal</Text>
+                            </View>
+                            <Text style={styles.mealStatDot}>·</Text>
+                            <Text style={styles.mealStatText}>{meal.totalCarbs}g carbs</Text>
+                          </View>
+                          <TouchableOpacity onPress={() => handleDelete(meal.id)}>
+                            <Trash2 size={15} color={Colors.textLight} />
+                          </TouchableOpacity>
+                        </View>
+
+                        {meal.foods.map((food, idx) => (
+                          <View key={`${food.id}-${idx}`} style={styles.foodRow}>
+                            <View style={[styles.foodDot, { backgroundColor: getFoodCategoryColor(food.category) }]} />
+                            <Text style={styles.foodName} numberOfLines={1}>{food.name}</Text>
+                            <Text style={styles.foodPortion}>{food.portion}</Text>
+                            <Text style={styles.foodCal}>{food.calories} kcal</Text>
+                          </View>
+                        ))}
+
+                        {meal.notes && (
+                          <Text style={styles.mealNote}>📝 {meal.notes}</Text>
+                        )}
+                      </Card>
+                    ))
+                  )}
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Glycemic load info */}
+          <Card style={styles.infoCard}>
+            <View style={styles.infoHeader}>
+              <TrendingUp size={18} color={Colors.secondary} />
+              <Text style={styles.infoTitle}>Carga Glicêmica do Dia</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <View style={styles.infoItem}>
+                <Text style={[styles.infoValue, {
+                  color: totalCarb < 150 ? Colors.primary : totalCarb < 200 ? Colors.warning : Colors.danger,
+                }]}>
+                  {totalCarb < 150 ? 'Baixa' : totalCarb < 200 ? 'Moderada' : 'Alta'}
+                </Text>
+                <Text style={styles.infoLabel}>Carga Glicêmica</Text>
+              </View>
+              <View style={styles.infoDivider} />
+              <View style={styles.infoItem}>
+                <Text style={[styles.infoValue, { color: Colors.orange }]}>{Math.round(totalCarb)}g</Text>
+                <Text style={styles.infoLabel}>Total de Carbs</Text>
+              </View>
+              <View style={styles.infoDivider} />
+              <View style={styles.infoItem}>
+                <Text style={[styles.infoValue, { color: Colors.secondary }]}>
+                  {Math.max(0, CARB_GOAL - totalCarb)}g
+                </Text>
+                <Text style={styles.infoLabel}>Restante</Text>
+              </View>
+            </View>
+          </Card>
+
+          <View style={{ height: 32 }} />
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -246,6 +271,7 @@ const styles = StyleSheet.create({
   dateTabActive: { backgroundColor: '#fff' },
   dateTabText: { fontSize: FontSize.sm, color: 'rgba(255,255,255,0.8)', fontWeight: FontWeight.medium },
   dateTabTextActive: { color: Colors.orange, fontWeight: FontWeight.bold },
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   macroCard: { margin: Spacing.lg, marginBottom: Spacing.md },
   macroHeader: { flexDirection: 'row', gap: 20 },
   calorieCircle: {
