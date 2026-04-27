@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiLogin, apiRegistrar, setApiToken, ApiUsuario } from '../services/api';
+import { apiLogin, apiRegistrar, setApiToken, setUnauthorizedHandler, ApiUsuario } from '../services/api';
 
 const TOKEN_KEY = '@diabecontrol:token';
 const USER_KEY = '@diabecontrol:usuario';
@@ -60,12 +60,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    setUnauthorizedHandler(null);
     await AsyncStorage.removeItem(TOKEN_KEY);
     await AsyncStorage.removeItem(USER_KEY);
     setApiToken(null);
     setToken(null);
     setUsuario(null);
   }, []);
+
+  // Registra o handler de sessão inválida sempre que logout mudar
+  useEffect(() => {
+    setUnauthorizedHandler(logout);
+    return () => setUnauthorizedHandler(null);
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{

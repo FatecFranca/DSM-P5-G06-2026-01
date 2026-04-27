@@ -4,8 +4,7 @@ import {
   Medication, WaterLog, Goal, ExerciseEntry, SleepEntry, AppSettings
 } from '../types';
 import {
-  MOCK_GLUCOSE,
-  MOCK_NOTIFICATIONS, MOCK_WATER_LOG,
+  MOCK_WATER_LOG,
   MOCK_EXERCISES,
 } from '../data/mockData';
 import { useAuth } from './AuthContext';
@@ -20,6 +19,8 @@ import {
   apiListarRefeicoes, apiCriarRefeicao, apiDeletarRefeicao, refeicaoParaMeal,
   apiListarDiarios, apiCriarDiario, apiDeletarDiario, diarioParaEntry,
   apiGetPerfil, apiAtualizarPerfil, usuarioParaUser,
+  apiListarNotificacoes, apiMarcarNotificacaoLida, apiMarcarTodasNotificacoesLidas,
+  notificacaoParaNotification,
   type CategoriaGoal,
   type FoodCategoryApp,
   type HumorApp,
@@ -52,8 +53,10 @@ interface AppContextType {
   deleteJournal: (id: string) => Promise<void>;
   loadJournals: () => Promise<void>;
   journalLoading: boolean;
-  markNotificationRead: (id: string) => void;
-  markAllNotificationsRead: () => void;
+  markNotificationRead: (id: string) => Promise<void>;
+  markAllNotificationsRead: () => Promise<void>;
+  loadNotificacoes: () => Promise<void>;
+  notificacoesLoading: boolean;
   toggleMedication: (id: string) => Promise<void>;
   loadMedicacoes: () => Promise<void>;
   medicacoesLoading: boolean;
@@ -121,7 +124,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [refeicaoLoading, setRefeicaoLoading] = useState(false);
   const [journals, setJournals] = useState<JournalEntry[]>([]);
   const [journalLoading, setJournalLoading] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notificacoesLoading, setNotificacoesLoading] = useState(false);
   const [medications, setMedications] = useState<Medication[]>([]);
   const [medicacoesLoading, setMedicacoesLoading] = useState(false);
   const [waterLog, setWaterLog] = useState<WaterLog[]>(MOCK_WATER_LOG);
@@ -238,12 +242,34 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await apiDeletarDiario(id);
   }, []);
 
-  const markNotificationRead = useCallback((id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  const loadNotificacoes = useCallback(async () => {
+    setNotificacoesLoading(true);
+    try {
+      const result = await apiListarNotificacoes(1, 100);
+      setNotifications(result.dados.map(notificacaoParaNotification) as Notification[]);
+    } catch {
+      // keep current state on error
+    } finally {
+      setNotificacoesLoading(false);
+    }
   }, []);
 
-  const markAllNotificationsRead = useCallback(() => {
+  const markNotificationRead = useCallback(async (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    try {
+      await apiMarcarNotificacaoLida(id);
+    } catch {
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: false } : n));
+    }
+  }, []);
+
+  const markAllNotificationsRead = useCallback(async () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    try {
+      await apiMarcarTodasNotificacoesLidas();
+    } catch {
+      // optimistic already applied, ignore
+    }
   }, []);
 
   const loadMedicacoes = useCallback(async () => {
@@ -332,6 +358,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (usuario) {
       setUser(usuarioParaUser(usuario) as User);
+      loadNotificacoes();
     }
   }, [usuario]);
 
@@ -457,7 +484,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addGlucoseReading, deleteGlucoseReading, loadGlicose, glicoseLoading,
       addMeal, deleteMeal, loadRefeicoes, refeicaoLoading,
       addJournal, deleteJournal, loadJournals, journalLoading,
-      markNotificationRead, markAllNotificationsRead,
+      markNotificationRead, markAllNotificationsRead, loadNotificacoes, notificacoesLoading,
       toggleMedication, loadMedicacoes, medicacoesLoading, criarMedicacao, editarMedicacao, deletarMedicacao,
       addWater, getTodayWater, updateSettings, updateUser, loadPerfil,
       completeOnboarding, updateGoal, addGoal, editGoalFields, deleteGoal, loadGoals, goalsLoading, addExercise,

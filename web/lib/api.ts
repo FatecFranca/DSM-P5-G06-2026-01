@@ -737,3 +737,81 @@ export async function webBuscarAlimentos(query: string, pagina = 0, max = 20) {
   );
   return res.data;
 }
+
+// ─── Notificações ─────────────────────────────────────────────────────────────
+
+export type TipoNotificacaoApi = 'GLICOSE' | 'REFEICAO' | 'MEDICAMENTO' | 'CONSULTA' | 'DICA' | 'META';
+
+export interface ApiNotificacao {
+  id: string;
+  usuarioId: string;
+  titulo: string;
+  mensagem: string;
+  tipo: TipoNotificacaoApi;
+  data: string;
+  hora: string;
+  lida: boolean;
+  criadoEm: string;
+  usuario?: { id: string; nome: string; email: string };
+}
+
+export interface ApiNotificacaoPaginada {
+  dados: ApiNotificacao[];
+  total: number;
+  naoLidas: number;
+  pagina: number;
+  limite: number;
+  totalPaginas: number;
+}
+
+export const TIPO_NOTIFICACAO_LABEL: Record<TipoNotificacaoApi, string> = {
+  GLICOSE:     'Glicose',
+  REFEICAO:    'Refeição',
+  MEDICAMENTO: 'Medicação',
+  CONSULTA:    'Consulta',
+  DICA:        'Dica',
+  META:        'Meta',
+};
+
+export const TIPO_NOTIFICACAO_COLOR: Record<TipoNotificacaoApi, string> = {
+  GLICOSE:     '#EF4444',
+  REFEICAO:    '#4CAF82',
+  MEDICAMENTO: '#8B5CF6',
+  CONSULTA:    '#3B8ED0',
+  DICA:        '#F97316',
+  META:        '#14B8A6',
+};
+
+export async function webListarTodasNotificacoes(pagina = 1, limite = 100, tipo?: TipoNotificacaoApi, lida?: boolean) {
+  const params = new URLSearchParams({ pagina: String(pagina), limite: String(limite) });
+  if (tipo) params.set('tipo', tipo);
+  if (lida !== undefined) params.set('lida', String(lida));
+  const res = await apiReq<{ success: boolean; data: ApiNotificacaoPaginada }>(
+    `/admin/notificacoes?${params}`
+  );
+  return res.data;
+}
+
+export async function webCriarNotificacao(payload: {
+  usuarioId?: string;
+  todos?: boolean;
+  titulo: string;
+  mensagem: string;
+  tipo: TipoNotificacaoApi;
+  data: string;
+  hora: string;
+}) {
+  const res = await apiReq<{ success: boolean; data: ApiNotificacao | ApiNotificacao[]; message: string }>(
+    '/admin/notificacoes',
+    { method: 'POST', body: JSON.stringify(payload) }
+  );
+  return res;
+}
+
+export async function webMarcarNotificacaoLida(id: string) {
+  await apiReq<{ success: boolean }>(`/notificacoes/${id}/ler`, { method: 'PATCH' });
+}
+
+export async function webDeletarNotificacao(id: string) {
+  await apiReq<{ success: boolean }>(`/admin/notificacoes/${id}`, { method: 'DELETE' });
+}

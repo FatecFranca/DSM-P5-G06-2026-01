@@ -99,6 +99,51 @@ export const notificacaoModel = {
     });
   },
 
+  async listarTodas(pagina = 1, limite = 50, tipo?: string, lida?: boolean) {
+    const offset = (pagina - 1) * limite;
+    const where: Record<string, unknown> = {};
+    if (tipo) where['tipo'] = tipo;
+    if (lida !== undefined) where['lida'] = lida;
+
+    const [notificacoes, total, naoLidas] = await Promise.all([
+      prisma.notificacao.findMany({
+        where,
+        skip: offset,
+        take: limite,
+        orderBy: [{ lida: 'asc' }, { data: 'desc' }, { hora: 'desc' }],
+        include: { usuario: { select: { id: true, nome: true, email: true } } },
+      }),
+      prisma.notificacao.count({ where }),
+      prisma.notificacao.count({ where: { lida: false } }),
+    ]);
+
+    return {
+      dados: notificacoes,
+      total,
+      naoLidas,
+      pagina,
+      limite,
+      totalPaginas: Math.ceil(total / limite),
+    };
+  },
+
+  async criarParaTodos(dados: Omit<CriarNotificacaoDto, 'usuarioId'>) {
+    const usuarios = await prisma.usuario.findMany({
+      where: { status: 'ATIVO' },
+      select: { id: true },
+    });
+
+    const criadas = await Promise.all(
+      usuarios.map((u) =>
+        prisma.notificacao.create({
+          data: { ...dados, usuarioId: u.id },
+          include: { usuario: { select: { id: true, nome: true } } },
+        })
+      )
+    );
+    return criadas;
+  },
+
   async deletar(id: string) {
     return prisma.notificacao.delete({
       where: { id },

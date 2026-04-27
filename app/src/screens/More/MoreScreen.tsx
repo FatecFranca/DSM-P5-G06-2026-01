@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  ShieldCheck, HelpCircle, Bell, Settings, User, TrendingUp,
-  Droplets, Pill, Target, Lightbulb, Dumbbell, Moon, ChevronRight,
+  ShieldCheck, HelpCircle, Bell, User, TrendingUp,
+  Droplets, Pill, Target, Lightbulb, Moon, ChevronRight, LogOut,
 } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../theme';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import { Card } from '../../components/common/Card';
 import { RootStackParamList } from '../../types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,7 +28,18 @@ interface MenuItem {
 export default function MoreScreen() {
   const navigation = useNavigation<Nav>();
   const { user, unreadNotificationsCount } = useApp();
+  const { logout } = useAuth();
   const insets = useSafeAreaInsets();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   const sections: Array<{ title: string; items: MenuItem[] }> = [
     {
@@ -171,6 +183,17 @@ export default function MoreScreen() {
           </View>
         ))}
 
+        {/* Logout */}
+        <TouchableOpacity
+          style={[styles.logoutBtn, loggingOut && { opacity: 0.6 }]}
+          onPress={handleLogout}
+          disabled={loggingOut}
+          activeOpacity={0.75}
+        >
+          <LogOut size={18} color={Colors.danger} />
+          <Text style={styles.logoutText}>{loggingOut ? 'Saindo...' : 'Sair da conta'}</Text>
+        </TouchableOpacity>
+
         <Text style={styles.versionText}>Diabetes Care v1.0.0</Text>
         <View style={{ height: 32 }} />
       </ScrollView>
@@ -204,5 +227,20 @@ const styles = StyleSheet.create({
   badge: { backgroundColor: Colors.danger, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   badgeText: { color: '#fff', fontSize: 10, fontWeight: FontWeight.bold },
   divider: { height: 1, backgroundColor: Colors.borderLight, marginLeft: 70 },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#FEE2E2',
+    borderRadius: BorderRadius.xl,
+    paddingVertical: 14,
+    marginBottom: Spacing.lg,
+  },
+  logoutText: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
+    color: Colors.danger,
+  },
   versionText: { textAlign: 'center', fontSize: FontSize.xs, color: Colors.textLight, marginTop: Spacing.md },
 });

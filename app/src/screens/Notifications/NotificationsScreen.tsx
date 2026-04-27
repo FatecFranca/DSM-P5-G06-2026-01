@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -10,6 +11,7 @@ import {
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../theme';
 import { useApp } from '../../context/AppContext';
 import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Card } from '../../components/common/Card';
 import { Notification } from '../../types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,10 +34,31 @@ const TYPE_COLORS: Record<Notification['type'], string> = {
   goal:        Colors.teal,
 };
 
+function dateLabel(date: string): string {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  if (date === today) return 'Hoje';
+  if (date === yesterday) return 'Ontem';
+  return date.split('-').reverse().join('/');
+}
+
 export default function NotificationsScreen() {
-  const { notifications, markNotificationRead, markAllNotificationsRead, unreadNotificationsCount } = useApp();
+  const {
+    notifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+    unreadNotificationsCount,
+    loadNotificacoes,
+    notificacoesLoading,
+  } = useApp();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+
+  useFocusEffect(
+    useCallback(() => {
+      loadNotificacoes();
+    }, [loadNotificacoes])
+  );
 
   const grouped = notifications.reduce<Record<string, Notification[]>>((acc, n) => {
     const key = n.date;
@@ -43,12 +66,6 @@ export default function NotificationsScreen() {
     acc[key].push(n);
     return acc;
   }, {});
-
-  const dateLabel = (date: string) => {
-    if (date === '2026-04-06') return 'Hoje';
-    if (date === '2026-04-05') return 'Ontem';
-    return date.split('-').reverse().join('/');
-  };
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -75,7 +92,27 @@ export default function NotificationsScreen() {
         </View>
       </LinearGradient>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={notificacoesLoading} onRefresh={loadNotificacoes} tintColor={Colors.warning} />
+        }
+      >
+        {notificacoesLoading && notifications.length === 0 && (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="large" color={Colors.warning} />
+          </View>
+        )}
+
+        {!notificacoesLoading && notifications.length === 0 && (
+          <View style={styles.emptyWrap}>
+            <Bell size={48} color={Colors.border} />
+            <Text style={styles.emptyTitle}>Sem notificações</Text>
+            <Text style={styles.emptyText}>Você não tem notificações no momento.</Text>
+          </View>
+        )}
+
         {Object.keys(grouped).sort((a, b) => b.localeCompare(a)).map(date => (
           <View key={date} style={styles.group}>
             <Text style={styles.dateLabel}>{dateLabel(date)}</Text>
@@ -111,14 +148,6 @@ export default function NotificationsScreen() {
           </View>
         ))}
 
-        {notifications.length === 0 && (
-          <View style={styles.emptyWrap}>
-            <Bell size={48} color={Colors.border} />
-            <Text style={styles.emptyTitle}>Sem notificações</Text>
-            <Text style={styles.emptyText}>Você não tem notificações no momento.</Text>
-          </View>
-        )}
-
         <View style={{ height: 32 }} />
       </ScrollView>
     </View>
@@ -138,6 +167,7 @@ const styles = StyleSheet.create({
   },
   markAllText: { fontSize: FontSize.sm, color: Colors.warning, fontWeight: FontWeight.semibold },
   content: { padding: Spacing.lg },
+  loadingWrap: { alignItems: 'center', paddingVertical: 60 },
   group: { marginBottom: Spacing.lg },
   dateLabel: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: Colors.textSecondary, marginBottom: Spacing.sm, textTransform: 'uppercase', letterSpacing: 0.5 },
   notifCard: { marginBottom: 8 },

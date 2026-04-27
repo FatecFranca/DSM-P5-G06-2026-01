@@ -102,12 +102,23 @@ export function usuarioParaUser(u: ApiUsuario) {
 // ─── Token ────────────────────────────────────────────────────────────────────
 
 let _token: string | null = null;
+let _onUnauthorized: (() => void) | null = null;
 
 export function setApiToken(token: string | null) {
   _token = token;
 }
 
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  _onUnauthorized = handler;
+}
+
 // ─── Core ─────────────────────────────────────────────────────────────────────
+
+const SESSION_INVALID_MESSAGES = [
+  'Sessão inválida. Faça login novamente.',
+  'Token inválido ou expirado',
+  'Token de autenticação não fornecido',
+];
 
 async function apiReq<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
@@ -124,7 +135,11 @@ async function apiReq<T>(endpoint: string, options: RequestInit = {}): Promise<T
 
   const json = await res.json();
   if (!json.success) {
-    throw new Error(json.message ?? `Erro ${res.status}`);
+    const msg: string = json.message ?? `Erro ${res.status}`;
+    if (res.status === 401 || SESSION_INVALID_MESSAGES.includes(msg)) {
+      _onUnauthorized?.();
+    }
+    throw new Error(msg);
   }
   return json as T;
 }
@@ -909,4 +924,57 @@ export async function apiBuscarAlimentos(query: string, pagina = 0, max = 20) {
     `/refeicao/buscar-alimento?${params}`,
   );
   return res.data;
+}
+
+// ─── Notificações ─────────────────────────────────────────────────────────────
+
+export type TipoNotificacaoApi = 'GLICOSE' | 'REFEICAO' | 'MEDICAMENTO' | 'CONSULTA' | 'DICA' | 'META';
+export type TipoNotificacaoApp = 'glucose' | 'meal' | 'medication' | 'appointment' | 'tip' | 'goal';
+
+const TIPO_NOTIF_PARA_APP: Record<TipoNotificacaoApi, TipoNotificacaoApp> = {
+  GLICOSE:     'glucose',
+  REFEICAO:    'meal',
+  MEDICAMENTO: 'medication',
+  CONSULTA:    'appointment',
+  DICA:        'tip',
+  META:        'goal',
+};
+
+export interface ApiNotificacao {
+  id: string;
+  usuarioId: string;
+  titulo: string;
+  mensagem: string;
+  tipo: TipoNotificacaoApi;
+  data: string;
+  hora: string;
+  lida: boolean;
+  criadoEm: string;
+}
+
+export function notificacaoParaNotification(n: ApiNotificacao) {
+  return {
+    id:      n.id,
+    title:   n.titulo,
+    message: n.mensagem,
+    type:    TIPO_NOTIF_PARA_APP[n.tipo] ?? 'tip',
+    date:    n.data,
+    time:    n.hora,
+    read:    n.lida,
+  };
+}
+
+export async function apiListarNotificacoes(pagina = 1, limite = 100) {
+  const res = await apiReq<{ success: boolean; data: { dados: ApiNotificacao[]; total: number; naoLidas: number; pagina: number; limite: number; totalPaginas: number } }>(
+    `/notificacoes?pagina=${pagina}&limite=${limite}`
+  );
+  return res.data;
+}
+
+export async function apiMarcarNotificacaoLida(id: string) {
+  await apiReq<{ success: boolean }>(`/notificacoes/${id}/ler`, { method: 'PATCH' });
+}
+
+export async function apiMarcarTodasNotificacoesLidas() {
+  await apiReq<{ success: boolean }>('/notificacoes/ler-todas', { method: 'PATCH' });
 }
