@@ -5,7 +5,6 @@ import {
 } from '../types';
 import {
   MOCK_WATER_LOG,
-  MOCK_EXERCISES,
 } from '../data/mockData';
 import { useAuth } from './AuthContext';
 import {
@@ -21,10 +20,13 @@ import {
   apiGetPerfil, apiAtualizarPerfil, usuarioParaUser,
   apiListarNotificacoes, apiMarcarNotificacaoLida, apiMarcarTodasNotificacoesLidas,
   notificacaoParaNotification,
+  apiListarExercicios, apiCriarExercicio, apiAtualizarExercicio, apiDeletarExercicio,
+  exercicioParaEntry,
   type CategoriaGoal,
   type FoodCategoryApp,
   type HumorApp,
   type TipoDiabetesApp,
+  type IntensidadeApp,
 } from '../services/api';
 
 interface AppContextType {
@@ -80,7 +82,11 @@ interface AppContextType {
   deleteGoal: (id: string) => Promise<void>;
   loadGoals: () => Promise<void>;
   goalsLoading: boolean;
-  addExercise: (entry: Omit<ExerciseEntry, 'id'>) => void;
+  loadExercicios: () => Promise<void>;
+  exerciciosLoading: boolean;
+  addExercise: (params: { type: string; duration: number; calories: number; date: string; time: string; intensity: IntensidadeApp; notes?: string }) => Promise<void>;
+  editExercise: (id: string, params: Partial<{ type: string; duration: number; calories: number; date: string; time: string; intensity: IntensidadeApp; notes: string }>) => Promise<void>;
+  deleteExercise: (id: string) => Promise<void>;
   addSleepEntry: (entry: Omit<SleepEntry, 'id'>) => Promise<void>;
   updateSleepEntry: (id: string, updates: Omit<SleepEntry, 'id'>) => Promise<void>;
   deleteSleepEntry: (id: string) => Promise<void>;
@@ -131,7 +137,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [waterLog, setWaterLog] = useState<WaterLog[]>(MOCK_WATER_LOG);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [goalsLoading, setGoalsLoading] = useState(false);
-  const [exercises, setExercises] = useState<ExerciseEntry[]>(MOCK_EXERCISES);
+  const [exercises, setExercises] = useState<ExerciseEntry[]>([]);
+  const [exerciciosLoading, setExerciciosLoading] = useState(false);
   const [sleepEntries, setSleepEntries] = useState<SleepEntry[]>([]);
   const [sleepLoading, setSleepLoading] = useState(false);
   const [hidratacaoLoading, setHidratacaoLoading] = useState(false);
@@ -359,6 +366,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (usuario) {
       setUser(usuarioParaUser(usuario) as User);
       loadNotificacoes();
+      loadExercicios();
     }
   }, [usuario]);
 
@@ -435,9 +443,47 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await apiDeletarMeta(id);
   }, []);
 
-  const addExercise = useCallback((entry: Omit<ExerciseEntry, 'id'>) => {
-    const newEntry: ExerciseEntry = { ...entry, id: Date.now().toString() };
-    setExercises(prev => [newEntry, ...prev]);
+  const loadExercicios = useCallback(async () => {
+    setExerciciosLoading(true);
+    try {
+      const result = await apiListarExercicios(1, 200);
+      setExercises(result.dados.map(exercicioParaEntry) as ExerciseEntry[]);
+    } catch {
+      // keep current state on error
+    } finally {
+      setExerciciosLoading(false);
+    }
+  }, []);
+
+  const addExercise = useCallback(async (params: { type: string; duration: number; calories: number; date: string; time: string; intensity: IntensidadeApp; notes?: string }) => {
+    const e = await apiCriarExercicio({
+      tipo:       params.type,
+      duracao:    params.duration,
+      calorias:   params.calories,
+      data:       params.date,
+      hora:       params.time,
+      intensidade: params.intensity,
+      notas:      params.notes,
+    });
+    setExercises(prev => [exercicioParaEntry(e) as ExerciseEntry, ...prev]);
+  }, []);
+
+  const editExercise = useCallback(async (id: string, params: Partial<{ type: string; duration: number; calories: number; date: string; time: string; intensity: IntensidadeApp; notes: string }>) => {
+    const e = await apiAtualizarExercicio(id, {
+      tipo:       params.type,
+      duracao:    params.duration,
+      calorias:   params.calories,
+      data:       params.date,
+      hora:       params.time,
+      intensidade: params.intensity,
+      notas:      params.notes,
+    });
+    setExercises(prev => prev.map(ex => ex.id === id ? (exercicioParaEntry(e) as ExerciseEntry) : ex));
+  }, []);
+
+  const deleteExercise = useCallback(async (id: string) => {
+    setExercises(prev => prev.filter(ex => ex.id !== id));
+    await apiDeletarExercicio(id);
   }, []);
 
   const loadSleepEntries = useCallback(async () => {
@@ -487,7 +533,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       markNotificationRead, markAllNotificationsRead, loadNotificacoes, notificacoesLoading,
       toggleMedication, loadMedicacoes, medicacoesLoading, criarMedicacao, editarMedicacao, deletarMedicacao,
       addWater, getTodayWater, updateSettings, updateUser, loadPerfil,
-      completeOnboarding, updateGoal, addGoal, editGoalFields, deleteGoal, loadGoals, goalsLoading, addExercise,
+      completeOnboarding, updateGoal, addGoal, editGoalFields, deleteGoal, loadGoals, goalsLoading,
+      loadExercicios, exerciciosLoading, addExercise, editExercise, deleteExercise,
       addSleepEntry, updateSleepEntry, deleteSleepEntry, loadSleepEntries, sleepLoading, getAvgSleepDuration,
       loadHidratacao, hidratacaoLoading, criarHidratacao, atualizarHidratacao, deletarHidratacao,
       unreadNotificationsCount,

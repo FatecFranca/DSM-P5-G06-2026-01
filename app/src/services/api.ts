@@ -978,3 +978,84 @@ export async function apiMarcarNotificacaoLida(id: string) {
 export async function apiMarcarTodasNotificacoesLidas() {
   await apiReq<{ success: boolean }>('/notificacoes/ler-todas', { method: 'PATCH' });
 }
+
+// ─── Exercícios ───────────────────────────────────────────────────────────────
+
+export type IntensidadeApi = 'LEVE' | 'MODERADA' | 'INTENSA';
+export type IntensidadeApp = 'low' | 'moderate' | 'high';
+
+const INTENSIDADE_PARA_APP: Record<IntensidadeApi, IntensidadeApp> = {
+  LEVE:     'low',
+  MODERADA: 'moderate',
+  INTENSA:  'high',
+};
+
+const INTENSIDADE_PARA_API: Record<IntensidadeApp, IntensidadeApi> = {
+  low:      'LEVE',
+  moderate: 'MODERADA',
+  high:     'INTENSA',
+};
+
+export interface ApiExercicio {
+  id: string;
+  usuarioId: string;
+  tipo: string;
+  duracao: number;
+  calorias: number;
+  data: string;
+  hora: string;
+  intensidade: IntensidadeApi;
+  notas?: string | null;
+  criadoEm: string;
+}
+
+export function exercicioParaEntry(e: ApiExercicio) {
+  return {
+    id:        e.id,
+    type:      e.tipo,
+    duration:  e.duracao,
+    calories:  e.calorias,
+    date:      e.data,
+    time:      e.hora,
+    intensity: INTENSIDADE_PARA_APP[e.intensidade] ?? 'moderate',
+    notes:     e.notas ?? undefined,
+  };
+}
+
+export async function apiListarExercicios(pagina = 1, limite = 100) {
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiExercicio> }>(
+    `/exercicios?pagina=${pagina}&limite=${limite}`
+  );
+  return res.data;
+}
+
+export async function apiCriarExercicio(params: {
+  tipo: string; duracao: number; calorias: number;
+  data: string; hora: string; intensidade: IntensidadeApp; notas?: string;
+}) {
+  const res = await apiReq<{ success: boolean; data: ApiExercicio }>(
+    '/exercicios',
+    {
+      method: 'POST',
+      body: JSON.stringify({ ...params, intensidade: INTENSIDADE_PARA_API[params.intensidade] }),
+    }
+  );
+  return res.data;
+}
+
+export async function apiAtualizarExercicio(id: string, params: Partial<{
+  tipo: string; duracao: number; calorias: number;
+  data: string; hora: string; intensidade: IntensidadeApp; notas: string;
+}>) {
+  const body: Record<string, unknown> = { ...params };
+  if (params.intensidade) body['intensidade'] = INTENSIDADE_PARA_API[params.intensidade];
+  const res = await apiReq<{ success: boolean; data: ApiExercicio }>(
+    `/exercicios/${id}`,
+    { method: 'PUT', body: JSON.stringify(body) }
+  );
+  return res.data;
+}
+
+export async function apiDeletarExercicio(id: string) {
+  await apiReq<{ success: boolean }>(`/exercicios/${id}`, { method: 'DELETE' });
+}

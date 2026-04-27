@@ -55,44 +55,8 @@ const router = Router();
  *         description: Não autenticado
  */
 router.post('/', autenticar, validate(criarExercicioSchema), exercicioController.criar);
-
-/**
- * @swagger
- * /exercicios:
- *   get:
- *     summary: Listar atividades do usuário autenticado
- *     tags: [Exercícios]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: pagina
- *         schema:
- *           type: integer
- *           default: 1
- *       - in: query
- *         name: limite
- *         schema:
- *           type: integer
- *           default: 20
- *       - in: query
- *         name: dataInicio
- *         schema:
- *           type: string
- *           format: date
- *         description: Filtrar a partir desta data (YYYY-MM-DD)
- *       - in: query
- *         name: dataFim
- *         schema:
- *           type: string
- *           format: date
- *         description: Filtrar até esta data (YYYY-MM-DD)
- *     responses:
- *       200:
- *         description: Lista paginada de atividades físicas
- *       401:
- *         description: Não autenticado
- */
 router.get('/', autenticar, exercicioController.listarDoUsuario);
+router.put('/:id', autenticar, exercicioController.atualizar);
+router.delete('/:id', autenticar, exercicioController.deletar);
 
 export default router;

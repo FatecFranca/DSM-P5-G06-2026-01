@@ -8,6 +8,7 @@ import { glicoseController } from '../controllers/glicoseController';
 import { medicacaoController } from '../controllers/medicacaoController';
 import { refeicaoController } from '../controllers/refeicaoController';
 import { notificacaoController } from '../controllers/notificacaoController';
+import { exercicioController } from '../controllers/exercicioController';
 import { autenticar, autorizarAdmin } from '../middlewares/auth';
 
 const router = Router();
@@ -170,5 +171,7 @@ router.get('/refeicao', refeicaoController.listarTodos);
 router.get('/notificacoes', notificacaoController.listarTodas);
 router.post('/notificacoes', notificacaoController.criar);
 router.delete('/notificacoes/:id', notificacaoController.deletar);
+
+router.get('/exercicios', exercicioController.listarTodos);
 
 export default router;

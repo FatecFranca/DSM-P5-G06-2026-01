@@ -815,3 +815,83 @@ export async function webMarcarNotificacaoLida(id: string) {
 export async function webDeletarNotificacao(id: string) {
   await apiReq<{ success: boolean }>(`/admin/notificacoes/${id}`, { method: 'DELETE' });
 }
+
+// ─── Exercícios ───────────────────────────────────────────────────────────────
+
+export type IntensidadeApi = 'LEVE' | 'MODERADA' | 'INTENSA';
+
+export interface ApiExercicio {
+  id: string;
+  usuarioId: string;
+  tipo: string;
+  duracao: number;
+  calorias?: number | null;
+  data: string;
+  hora: string;
+  intensidade: IntensidadeApi;
+  notas?: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+  usuario?: { id: string; nome: string; email: string };
+}
+
+export const INTENSIDADE_LABEL: Record<IntensidadeApi, string> = {
+  LEVE:     'Leve',
+  MODERADA: 'Moderada',
+  INTENSA:  'Intensa',
+};
+
+export const INTENSIDADE_COLOR: Record<IntensidadeApi, string> = {
+  LEVE:     '#4CAF82',
+  MODERADA: '#F59E0B',
+  INTENSA:  '#EF4444',
+};
+
+export const INTENSIDADE_BG: Record<IntensidadeApi, string> = {
+  LEVE:     '#E8F5EE',
+  MODERADA: '#FEF3C7',
+  INTENSA:  '#FEE2E2',
+};
+
+export async function webListarTodosExercicios(pagina = 1, limite = 200) {
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiExercicio> }>(
+    `/admin/exercicios?pagina=${pagina}&limite=${limite}`
+  );
+  return res.data;
+}
+
+export async function webCriarExercicio(payload: {
+  tipo: string;
+  duracao: number;
+  calorias?: number;
+  data: string;
+  hora: string;
+  intensidade: IntensidadeApi;
+  notas?: string;
+}) {
+  const res = await apiReq<{ success: boolean; data: ApiExercicio }>(
+    '/exercicios',
+    { method: 'POST', body: JSON.stringify(payload) }
+  );
+  return res.data;
+}
+
+export async function webAtualizarExercicio(id: string, payload: Partial<{
+  tipo: string;
+  duracao: number;
+  calorias: number;
+  data: string;
+  hora: string;
+  intensidade: IntensidadeApi;
+  notas: string;
+}>) {
+  const res = await apiReq<{ success: boolean; data: ApiExercicio }>(
+    `/exercicios/${id}`,
+    { method: 'PUT', body: JSON.stringify(payload) }
+  );
+  return res.data;
+}
+
+export async function webDeletarExercicio(id: string) {
+  await apiReq<{ success: boolean }>(`/exercicios/${id}`, { method: 'DELETE' });
+}

@@ -1,6 +1,6 @@
 import Joi from 'joi';
 
-const INTENSIDADES_VALIDAS = ['BAIXA', 'MEDIA', 'ALTA'] as const;
+const INTENSIDADES_VALIDAS = ['LEVE', 'MODERADA', 'INTENSA'] as const;
 
 const HORA_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATA_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -41,7 +41,7 @@ export const criarExercicioSchema = Joi.object({
     .valid(...INTENSIDADES_VALIDAS)
     .required()
     .messages({
-      'any.only': 'Intensidade deve ser: BAIXA, MEDIA ou ALTA',
+      'any.only': 'Intensidade deve ser: LEVE, MODERADA ou INTENSA',
       'any.required': 'Intensidade é obrigatória',
     }),
 
@@ -78,7 +78,7 @@ export const atualizarExercicioSchema = Joi.object({
     .valid(...INTENSIDADES_VALIDAS)
     .optional()
     .messages({
-      'any.only': 'Intensidade deve ser: BAIXA, MEDIA ou ALTA',
+      'any.only': 'Intensidade deve ser: LEVE, MODERADA ou INTENSA',
     }),
 
   notas: Joi.string().trim().max(500).optional().allow('').messages({

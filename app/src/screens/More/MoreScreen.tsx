@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   ShieldCheck, HelpCircle, Bell, User, TrendingUp,
-  Droplets, Pill, Target, Lightbulb, Moon, ChevronRight, LogOut,
+  Droplets, Pill, Target, Lightbulb, Moon, ChevronRight, LogOut, Dumbbell,
 } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../theme';
 import { useApp } from '../../context/AppContext';
@@ -72,6 +72,13 @@ export default function MoreScreen() {
           sublabel: 'Monitore seu descanso',
           color: Colors.purple,
           onPress: () => navigation.navigate('Sleep' as any),
+        },
+        {
+          icon: <Dumbbell size={20} color="#fff" />,
+          label: 'Exercícios',
+          sublabel: 'Atividades físicas e treinos',
+          color: '#8B5CF6',
+          onPress: () => navigation.navigate('Exercise' as any),
         },
         {
           icon: <TrendingUp size={20} color="#fff" />,

@@ -32,6 +32,7 @@ import GoalsScreen from '../screens/Goals/GoalsScreen';
 import FAQScreen from '../screens/FAQ/FAQScreen';
 import DiagnosisScreen from '../screens/Diagnosis/DiagnosisScreen';
 import TipsScreen from '../screens/Tips/TipsScreen';
+import ExerciseScreen from '../screens/Exercise/ExerciseScreen';
 
 // Tab navigator
 import TabNavigator from './TabNavigator';
@@ -83,6 +84,7 @@ export default function AppNavigator() {
             <Stack.Screen name="FAQ" component={FAQScreen} />
             <Stack.Screen name="Diagnosis" component={DiagnosisScreen} />
             <Stack.Screen name="Tips" component={TipsScreen} />
+            <Stack.Screen name="Exercise" component={ExerciseScreen} />
           </>
         )}
       </Stack.Navigator>
