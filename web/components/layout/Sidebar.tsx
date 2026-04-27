@@ -40,7 +40,6 @@ const navGroups = [
     section: "SISTEMA",
     items: [
       { label: "Relatórios", href: "/reports", icon: BarChart2 },
-      { label: "Configurações", href: "/settings", icon: Settings },
     ],
   },
 ];

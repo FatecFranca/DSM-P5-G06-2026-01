@@ -7,7 +7,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   User, Edit3, Heart, Calendar, Weight, Ruler,
-  Stethoscope, ChevronRight, Award, TrendingUp, Activity, ArrowLeft,
+  Stethoscope, TrendingUp, Activity, ArrowLeft,
 } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '../../theme';
 import { useApp } from '../../context/AppContext';
@@ -155,28 +155,6 @@ export default function ProfileScreen() {
             </View>
           </Card>
 
-          {/* Achievements */}
-          <Card style={styles.achievCard}>
-            <View style={styles.sectionHeader}>
-              <Award size={18} color={Colors.warning} />
-              <Text style={styles.sectionTitle}>Conquistas</Text>
-            </View>
-            <View style={styles.achievGrid}>
-              {[
-                { emoji: '🏃', label: '7 dias ativo', unlocked: true },
-                { emoji: '💧', label: 'Hidratado', unlocked: true },
-                { emoji: '📊', label: '10 medições', unlocked: true },
-                { emoji: '🥗', label: 'Semana saudável', unlocked: false },
-                { emoji: '😴', label: 'Sono em dia', unlocked: false },
-                { emoji: '🎯', label: 'Meta atingida', unlocked: false },
-              ].map(a => (
-                <View key={a.label} style={[styles.achievItem, !a.unlocked && styles.achievItemLocked]}>
-                  <Text style={[styles.achievEmoji, !a.unlocked && styles.achievEmojiLocked]}>{a.emoji}</Text>
-                  <Text style={[styles.achievLabel, !a.unlocked && styles.achievLabelLocked]}>{a.label}</Text>
-                </View>
-              ))}
-            </View>
-          </Card>
         </View>
 
         <View style={{ height: 32 }} />
@@ -239,16 +217,4 @@ const styles = StyleSheet.create({
   targetUnit: { fontSize: FontSize.xs, color: Colors.textSecondary },
   targetArrow: { alignItems: 'center' },
   targetArrowText: { fontSize: FontSize.xs, color: Colors.textSecondary },
-  achievCard: {},
-  achievGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  achievItem: {
-    width: '30%', alignItems: 'center', padding: 12,
-    borderRadius: BorderRadius.md, backgroundColor: Colors.primaryLight,
-    borderWidth: 1, borderColor: Colors.primary + '30',
-  },
-  achievItemLocked: { backgroundColor: Colors.borderLight, borderColor: Colors.border },
-  achievEmoji: { fontSize: 28, marginBottom: 4 },
-  achievEmojiLocked: { opacity: 0.3 },
-  achievLabel: { fontSize: FontSize.xs, color: Colors.primary, fontWeight: FontWeight.medium, textAlign: 'center' },
-  achievLabelLocked: { color: Colors.textLight },
 });

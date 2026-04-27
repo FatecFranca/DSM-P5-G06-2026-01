@@ -14,7 +14,6 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
   "/tips": { title: "Dicas & Artigos", subtitle: "Gerenciar conteúdo educativo" },
   "/notifications": { title: "Notificações", subtitle: "Central de notificações" },
   "/reports": { title: "Relatórios", subtitle: "Análises e métricas do sistema" },
-  "/settings": { title: "Configurações", subtitle: "Preferências e configurações" },
 };
 
 export default function Header() {

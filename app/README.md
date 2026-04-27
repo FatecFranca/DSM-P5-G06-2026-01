@@ -126,7 +126,7 @@ App.tsx
 Hub com acesso a todos os módulos adicionais:
 - Hidratação · Medicações · Metas · Relatórios
 - Pré-diagnóstico · Dicas & Artigos · FAQ
-- Perfil · Notificações · Configurações
+- Perfil · Notificações 
 
 ---
 
@@ -148,7 +148,6 @@ Hub com acesso a todos os módulos adicionais:
 | `GoalsScreen` | Definição e acompanhamento de metas |
 | `ReportsScreen` | Relatórios consolidados de saúde |
 | `NotificationsScreen` | Central de notificações |
-| `SettingsScreen` | Configurações do aplicativo |
 | `FAQScreen` | Perguntas frequentes |
 
 ---
@@ -171,7 +170,6 @@ O `AppContext` centraliza todos os dados da sessão:
 | `goals` | Metas de saúde |
 | `exercises` | Atividades físicas |
 | `sleep` | Registros de sono |
-| `settings` | Configurações do app |
 | `onboarded` | Status de onboarding |
 
 ### Ações disponíveis

@@ -1,13 +1,14 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import {
   User, GlucoseReading, MealEntry, JournalEntry, Notification,
   Medication, WaterLog, Goal, ExerciseEntry, SleepEntry, AppSettings
 } from '../types';
 import {
-  MOCK_USER, MOCK_GLUCOSE,
+  MOCK_GLUCOSE,
   MOCK_NOTIFICATIONS, MOCK_WATER_LOG,
   MOCK_EXERCISES,
 } from '../data/mockData';
+import { useAuth } from './AuthContext';
 import {
   apiListarSono, apiCriarSono, apiAtualizarSono, apiDeletarSono, sonoParaEntry,
   apiListarMetas, apiCriarMeta, apiAtualizarMeta, apiDeletarMeta, metaParaGoal,
@@ -18,9 +19,11 @@ import {
   medicacaoParaApp,
   apiListarRefeicoes, apiCriarRefeicao, apiDeletarRefeicao, refeicaoParaMeal,
   apiListarDiarios, apiCriarDiario, apiDeletarDiario, diarioParaEntry,
+  apiGetPerfil, apiAtualizarPerfil, usuarioParaUser,
   type CategoriaGoal,
   type FoodCategoryApp,
   type HumorApp,
+  type TipoDiabetesApp,
 } from '../services/api';
 
 interface AppContextType {
@@ -65,7 +68,8 @@ interface AppContextType {
   atualizarHidratacao: (id: string, params: { data?: string; hora?: string; quantidade?: number }) => Promise<void>;
   deletarHidratacao: (id: string) => Promise<void>;
   updateSettings: (s: Partial<AppSettings>) => void;
-  updateUser: (u: Partial<User>) => void;
+  updateUser: (u: Partial<User>) => Promise<void>;
+  loadPerfil: () => Promise<void>;
   completeOnboarding: () => void;
   updateGoal: (id: string, current: number) => Promise<void>;
   addGoal: (params: { title: string; description?: string; target: number; unit: string; category: CategoriaGoal; deadline: string; color?: string }) => Promise<void>;
@@ -94,10 +98,23 @@ const defaultSettings: AppSettings = {
   backupEnabled: false,
 };
 
+const defaultUser: User = {
+  id: '',
+  name: '',
+  email: '',
+  age: 0,
+  weight: 0,
+  height: 0,
+  diabetesType: 'none',
+  targetGlucoseMin: 70,
+  targetGlucoseMax: 140,
+};
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User>(MOCK_USER);
+  const { usuario } = useAuth();
+  const [user, setUser] = useState<User>(defaultUser);
   const [glucoseReadings, setGlucoseReadings] = useState<GlucoseReading[]>([]);
   const [glicoseLoading, setGlicoseLoading] = useState(false);
   const [meals, setMeals] = useState<MealEntry[]>([]);
@@ -312,12 +329,45 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return waterLog.filter(w => w.date === today).reduce((sum, w) => sum + w.amount, 0);
   }, [waterLog]);
 
+  useEffect(() => {
+    if (usuario) {
+      setUser(usuarioParaUser(usuario) as User);
+    }
+  }, [usuario]);
+
+  const loadPerfil = useCallback(async () => {
+    if (!user.id) return;
+    try {
+      const u = await apiGetPerfil(user.id);
+      setUser(usuarioParaUser(u) as User);
+    } catch {
+      // keep current state on error
+    }
+  }, [user.id]);
+
+  const updateUser = useCallback(async (u: Partial<User>) => {
+    setUser(prev => ({ ...prev, ...u }));
+    if (!user.id) return;
+    try {
+      const updated = await apiAtualizarPerfil(user.id, {
+        nome:             u.name,
+        idade:            u.age,
+        peso:             u.weight,
+        altura:           u.height,
+        diabetesType:     u.diabetesType as TipoDiabetesApp | undefined,
+        targetGlucoseMin: u.targetGlucoseMin,
+        targetGlucoseMax: u.targetGlucoseMax,
+        doctorName:       u.doctorName,
+        lastCheckup:      u.lastCheckup,
+      });
+      setUser(usuarioParaUser(updated) as User);
+    } catch {
+      // keep optimistic update on error
+    }
+  }, [user.id]);
+
   const updateSettings = useCallback((s: Partial<AppSettings>) => {
     setSettings(prev => ({ ...prev, ...s }));
-  }, []);
-
-  const updateUser = useCallback((u: Partial<User>) => {
-    setUser(prev => ({ ...prev, ...u }));
   }, []);
 
   const completeOnboarding = useCallback(() => {
@@ -409,7 +459,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addJournal, deleteJournal, loadJournals, journalLoading,
       markNotificationRead, markAllNotificationsRead,
       toggleMedication, loadMedicacoes, medicacoesLoading, criarMedicacao, editarMedicacao, deletarMedicacao,
-      addWater, getTodayWater, updateSettings, updateUser,
+      addWater, getTodayWater, updateSettings, updateUser, loadPerfil,
       completeOnboarding, updateGoal, addGoal, editGoalFields, deleteGoal, loadGoals, goalsLoading, addExercise,
       addSleepEntry, updateSleepEntry, deleteSleepEntry, loadSleepEntries, sleepLoading, getAvgSleepDuration,
       loadHidratacao, hidratacaoLoading, criarHidratacao, atualizarHidratacao, deletarHidratacao,

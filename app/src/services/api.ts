@@ -62,6 +62,43 @@ export function dicaParaTip(dica: ApiDica) {
   };
 }
 
+// ─── Diabetes type mapping ────────────────────────────────────────────────────
+
+export type TipoDiabetesApi = 'NENHUM' | 'TIPO1' | 'TIPO2' | 'GESTACIONAL' | 'PRE_DIABETES';
+export type TipoDiabetesApp = 'none' | 'type1' | 'type2' | 'gestational' | 'prediabetes';
+
+const TIPO_PARA_APP: Record<TipoDiabetesApi, TipoDiabetesApp> = {
+  NENHUM:       'none',
+  TIPO1:        'type1',
+  TIPO2:        'type2',
+  GESTACIONAL:  'gestational',
+  PRE_DIABETES: 'prediabetes',
+};
+
+const APP_PARA_TIPO_DIABETES: Record<TipoDiabetesApp, TipoDiabetesApi> = {
+  none:        'NENHUM',
+  type1:       'TIPO1',
+  type2:       'TIPO2',
+  gestational: 'GESTACIONAL',
+  prediabetes: 'PRE_DIABETES',
+};
+
+export function usuarioParaUser(u: ApiUsuario) {
+  return {
+    id:               u.id,
+    name:             u.nome,
+    email:            u.email,
+    age:              u.idade ?? 0,
+    weight:           u.peso ?? 0,
+    height:           u.altura ?? 0,
+    diabetesType:     (u.tipoDiabetes ? (TIPO_PARA_APP[u.tipoDiabetes as TipoDiabetesApi] ?? 'none') : 'none') as TipoDiabetesApp,
+    targetGlucoseMin: u.glicoseAlvoMin ?? 70,
+    targetGlucoseMax: u.glicoseAlvoMax ?? 140,
+    doctorName:       u.nomeMedico ?? undefined,
+    lastCheckup:      u.ultimaConsulta ?? undefined,
+  };
+}
+
 // ─── Token ────────────────────────────────────────────────────────────────────
 
 let _token: string | null = null;
@@ -106,6 +143,41 @@ export async function apiRegistrar(nome: string, email: string, senha: string) {
   const res = await apiReq<{ success: boolean; data: { token: string; usuario: ApiUsuario } }>(
     '/auth/registrar',
     { method: 'POST', body: JSON.stringify({ nome, email, senha }) }
+  );
+  return res.data;
+}
+
+// ─── Perfil ───────────────────────────────────────────────────────────────────
+
+export async function apiGetPerfil(id: string) {
+  const res = await apiReq<{ success: boolean; data: ApiUsuario }>(`/usuarios/${id}`);
+  return res.data;
+}
+
+export async function apiAtualizarPerfil(id: string, params: {
+  nome?: string;
+  idade?: number;
+  peso?: number;
+  altura?: number;
+  diabetesType?: TipoDiabetesApp;
+  targetGlucoseMin?: number;
+  targetGlucoseMax?: number;
+  doctorName?: string;
+  lastCheckup?: string;
+}) {
+  const body: Record<string, unknown> = {};
+  if (params.nome !== undefined)             body['nome'] = params.nome;
+  if (params.idade !== undefined)            body['idade'] = params.idade;
+  if (params.peso !== undefined)             body['peso'] = params.peso;
+  if (params.altura !== undefined)           body['altura'] = params.altura;
+  if (params.diabetesType !== undefined)     body['tipoDiabetes'] = APP_PARA_TIPO_DIABETES[params.diabetesType];
+  if (params.targetGlucoseMin !== undefined) body['glicoseAlvoMin'] = params.targetGlucoseMin;
+  if (params.targetGlucoseMax !== undefined) body['glicoseAlvoMax'] = params.targetGlucoseMax;
+  if (params.doctorName !== undefined)       body['nomeMedico'] = params.doctorName;
+  if (params.lastCheckup !== undefined)      body['ultimaConsulta'] = params.lastCheckup;
+  const res = await apiReq<{ success: boolean; data: ApiUsuario }>(
+    `/usuarios/${id}`,
+    { method: 'PUT', body: JSON.stringify(body) }
   );
   return res.data;
 }
@@ -534,12 +606,6 @@ export async function apiDeletarGlicose(id: string) {
 export type TipoMedicacaoApi = 'INSULINA' | 'ORAL' | 'SUPLEMENTO' | 'OUTRO';
 type TipoApp = 'insulin' | 'oral' | 'supplement' | 'other';
 
-const TIPO_PARA_APP: Record<TipoMedicacaoApi, TipoApp> = {
-  INSULINA: 'insulin',
-  ORAL: 'oral',
-  SUPLEMENTO: 'supplement',
-  OUTRO: 'other',
-};
 
 const APP_PARA_TIPO: Record<TipoApp, TipoMedicacaoApi> = {
   insulin: 'INSULINA',

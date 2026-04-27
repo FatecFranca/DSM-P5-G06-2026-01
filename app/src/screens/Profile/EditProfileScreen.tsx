@@ -31,23 +31,23 @@ export default function EditProfileScreen() {
   });
   const [loading, setLoading] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setLoading(true);
-    setTimeout(() => {
-      updateUser({
-        name: form.name.trim(),
-        age: parseInt(form.age) || user.age,
-        weight: parseFloat(form.weight) || user.weight,
-        height: parseInt(form.height) || user.height,
-        diabetesType: form.diabetesType as any,
-        email: form.email.trim(),
-        doctorName: form.doctorName.trim() || undefined,
+    try {
+      await updateUser({
+        name:             form.name.trim(),
+        age:              parseInt(form.age) || user.age,
+        weight:           parseFloat(form.weight) || user.weight,
+        height:           parseInt(form.height) || user.height,
+        diabetesType:     form.diabetesType as any,
+        doctorName:       form.doctorName.trim() || undefined,
         targetGlucoseMin: parseInt(form.targetGlucoseMin) || user.targetGlucoseMin,
         targetGlucoseMax: parseInt(form.targetGlucoseMax) || user.targetGlucoseMax,
       });
-      setLoading(false);
       navigation.goBack();
-    }, 500);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const field = (label: string, key: keyof typeof form, opts?: { keyboardType?: any; placeholder?: string }) => (

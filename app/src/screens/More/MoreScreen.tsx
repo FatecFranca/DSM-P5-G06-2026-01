@@ -114,13 +114,6 @@ export default function MoreScreen() {
           color: Colors.warning,
           onPress: () => navigation.navigate('Notifications' as any),
         },
-        {
-          icon: <Settings size={20} color="#fff" />,
-          label: 'Configurações',
-          sublabel: 'Personalize o app',
-          color: '#4B5563',
-          onPress: () => navigation.navigate('Settings' as any),
-        },
       ],
     },
   ];

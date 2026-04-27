@@ -119,7 +119,6 @@ As rotas abaixo já estão na Sidebar aguardando implementação:
 - `/tips` — Gerenciamento de dicas educativas
 - `/notifications` — Central de notificações
 - `/reports` — Relatórios analíticos
-- `/settings` — Configurações do sistema
 
 ---
 
