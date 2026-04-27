@@ -73,9 +73,7 @@ export default function ProfileScreen() {
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</Text>
             </View>
-            <TouchableOpacity style={styles.editAvatarBtn}>
-              <Edit3 size={14} color={Colors.secondary} />
-            </TouchableOpacity>
+
           </View>
           <Text style={styles.userName}>{user.name}</Text>
           <Text style={styles.userEmail}>{user.email}</Text>
