@@ -1059,3 +1059,53 @@ export async function apiAtualizarExercicio(id: string, params: Partial<{
 export async function apiDeletarExercicio(id: string) {
   await apiReq<{ success: boolean }>(`/exercicios/${id}`, { method: 'DELETE' });
 }
+
+// ─── Relatórios / Estatísticas ────────────────────────────────────────────────
+
+export interface ApiGlicoseEstatisticas {
+  total: number;
+  media: number;
+  percentual: { normal: number; alto: number; baixo: number };
+}
+
+export interface ApiTendenciaGlicose {
+  data: string;
+  min: number;
+  media: number;
+  max: number;
+}
+
+export interface ApiEstatisticasSono {
+  total: number;
+  mediaDuracao: number;
+  distribuicaoQualidade: Record<string, number>;
+}
+
+export async function apiEstatisticasGlicose(dataInicio?: string, dataFim?: string) {
+  const params = new URLSearchParams();
+  if (dataInicio) params.set('dataInicio', dataInicio);
+  if (dataFim) params.set('dataFim', dataFim);
+  const q = params.toString() ? `?${params}` : '';
+  const res = await apiReq<{ success: boolean; data: ApiGlicoseEstatisticas }>(
+    `/glicose/estatisticas${q}`
+  );
+  return res.data;
+}
+
+export async function apiTendenciaGlicose(dataInicio?: string, dataFim?: string) {
+  const params = new URLSearchParams();
+  if (dataInicio) params.set('dataInicio', dataInicio);
+  if (dataFim) params.set('dataFim', dataFim);
+  const q = params.toString() ? `?${params}` : '';
+  const res = await apiReq<{ success: boolean; data: ApiTendenciaGlicose[] }>(
+    `/glicose/tendencia${q}`
+  );
+  return res.data;
+}
+
+export async function apiEstatisticasSono() {
+  const res = await apiReq<{ success: boolean; data: ApiEstatisticasSono }>(
+    '/sono/estatisticas'
+  );
+  return res.data;
+}
