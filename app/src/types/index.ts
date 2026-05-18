@@ -81,6 +81,8 @@ export interface DiagnosisResult {
   riskLevel: RiskLevel;
   percentage: number;
   answers: Record<string, number>;
+  predicao?: number;
+  probabilidade?: number;
 }
 
 export interface FAQItem {
@@ -192,7 +194,7 @@ export type RootStackParamList = {
   AddGlucose: { editing?: GlucoseReading };
   AddFood: { mealType: MealType; date: string };
   AddJournal: { editing?: JournalEntry };
-  DiagnosisDetail: { result: DiagnosisResult };
+  DiagnosisDetail: { result: DiagnosisResult; isFromOnboarding?: boolean };
   FAQDetail: { item: FAQItem };
   EditProfile: undefined;
   TipDetail: { tip: Tip };

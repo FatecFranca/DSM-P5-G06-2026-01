@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  ShieldCheck, HelpCircle, Bell, User, TrendingUp,
+  HelpCircle, Bell, User, TrendingUp,
   Droplets, Pill, Target, Lightbulb, Moon, ChevronRight, LogOut, Dumbbell,
 } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../theme';
@@ -92,13 +92,6 @@ export default function MoreScreen() {
     {
       title: 'Ferramentas',
       items: [
-        {
-          icon: <ShieldCheck size={20} color="#fff" />,
-          label: 'Pré-Diagnóstico',
-          sublabel: 'Avalie seu risco para diabetes',
-          color: Colors.primary,
-          onPress: () => navigation.navigate('Diagnosis' as any),
-        },
         {
           icon: <Lightbulb size={20} color="#fff" />,
           label: 'Dicas & Artigos',

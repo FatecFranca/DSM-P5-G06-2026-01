@@ -118,33 +118,50 @@ enum TipoRefeicao {
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model Usuario {
-  id             String        @id @default(uuid())
-  nome           String
-  email          String        @unique
-  senha          String
-  idade          Int?
-  peso           Float?
-  altura         Float?
-  tipoDiabetes   TipoDiabetes  @default(NENHUM)
-  glicoseAlvoMin Float?
-  glicoseAlvoMax Float?
-  nomeMedico     String?
-  ultimaConsulta DateTime?
-  status         StatusUsuario @default(ATIVO)
-  perfil         Perfil        @default(USUARIO)
-  criadoEm      DateTime      @default(now())
-  atualizadoEm  DateTime      @updatedAt
+  id                String        @id @default(uuid())
+  nome              String
+  email             String        @unique
+  senha             String
+  idade             Int?
+  peso              Float?
+  altura            Float?
+  tipoDiabetes      TipoDiabetes  @default(NENHUM)
+  glicoseAlvoMin    Float?
+  glicoseAlvoMax    Float?
+  nomeMedico        String?
+  ultimaConsulta    DateTime?
+  status            StatusUsuario @default(ATIVO)
+  perfil            Perfil        @default(USUARIO)
+  diagnosticoFeito  Boolean       @default(false)
+  criadoEm         DateTime      @default(now())
+  atualizadoEm     DateTime      @updatedAt
 
-  diarios     Diario[]
-  sonos       Sono[]
-  metas       Meta[]
-  glicoses    Glicose[]
-  hidratacoes Hidratacao[]
-  medicacoes  Medicacao[]
-  refeicoes   Refeicao[]
-  exercicios Exercicio[]
+  diarios      Diario[]
+  sonos        Sono[]
+  metas        Meta[]
+  glicoses     Glicose[]
+  hidratacoes  Hidratacao[]
+  medicacoes   Medicacao[]
+  refeicoes    Refeicao[]
+  exercicios   Exercicio[]
   notificacoes Notificacao[]
+  diagnosticos Diagnostico[]
   @@map("usuarios")
+}
+
+model Diagnostico {
+  id            String   @id @default(uuid())
+  usuarioId     String
+  usuario       Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  respostas     Json
+  pontuacao     Int
+  nivelRisco    String
+  percentual    Int
+  predicao      Int
+  probabilidade Float
+  criadoEm     DateTime @default(now())
+
+  @@map("diagnosticos")
 }
 
 model Diario {

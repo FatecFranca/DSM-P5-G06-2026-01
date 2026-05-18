@@ -132,6 +132,12 @@ async function apiReq<T>(
     headers: { ...headers, ...(options.headers as Record<string, string> ?? {}) },
   });
 
+  if (res.status === 401) {
+    clearSession();
+    if (typeof window !== 'undefined') window.location.replace('/login');
+    throw new Error('Sessão expirada. Faça login novamente.');
+  }
+
   const json = await res.json();
   if (!json.success) {
     throw new Error(json.message ?? `Erro ${res.status}`);
@@ -894,4 +900,46 @@ export async function webAtualizarExercicio(id: string, payload: Partial<{
 
 export async function webDeletarExercicio(id: string) {
   await apiReq<{ success: boolean }>(`/exercicios/${id}`, { method: 'DELETE' });
+}
+
+// ─── Diagnósticos ─────────────────────────────────────────────────────────────
+
+export type NivelRisco = 'low' | 'medium' | 'high';
+
+export interface ApiDiagnostico {
+  id: string;
+  usuarioId: string;
+  respostas: Record<string, number>;
+  pontuacao: number;
+  nivelRisco: NivelRisco;
+  percentual: number;
+  predicao: number;
+  probabilidade: number;
+  criadoEm: string;
+  usuario?: { id: string; nome: string; email: string };
+}
+
+export const NIVEL_RISCO_LABEL: Record<NivelRisco, string> = {
+  low:    'Baixo',
+  medium: 'Médio',
+  high:   'Alto',
+};
+
+export const NIVEL_RISCO_COLOR: Record<NivelRisco, string> = {
+  low:    '#4CAF82',
+  medium: '#F59E0B',
+  high:   '#EF4444',
+};
+
+export const NIVEL_RISCO_BG: Record<NivelRisco, string> = {
+  low:    '#E8F5EE',
+  medium: '#FEF3C7',
+  high:   '#FEE2E2',
+};
+
+export async function webListarTodosDiagnosticos(pagina = 1, limite = 50) {
+  const res = await apiReq<{ success: boolean; data: ApiPaginado<ApiDiagnostico> }>(
+    `/admin/diagnosticos?pagina=${pagina}&limite=${limite}`
+  );
+  return res.data;
 }

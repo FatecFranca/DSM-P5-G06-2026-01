@@ -10,6 +10,8 @@ interface AuthContextType {
   usuario: ApiUsuario | null;
   isLoggedIn: boolean;
   isLoading: boolean;
+  diagnosticoFeito: boolean;
+  marcarDiagnosticoFeito: () => void;
   login: (email: string, senha: string) => Promise<void>;
   registrar: (nome: string, email: string, senha: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -21,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [usuario, setUsuario] = useState<ApiUsuario | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [diagnosticoFeito, setDiagnosticoFeito] = useState(false);
 
   // Restore session on startup
   useEffect(() => {
@@ -29,9 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storedToken = await AsyncStorage.getItem(TOKEN_KEY);
         const storedUser = await AsyncStorage.getItem(USER_KEY);
         if (storedToken && storedUser) {
+          const u: ApiUsuario = JSON.parse(storedUser);
           setToken(storedToken);
-          setUsuario(JSON.parse(storedUser));
+          setUsuario(u);
           setApiToken(storedToken);
+          setDiagnosticoFeito(u.diagnosticoFeito ?? false);
         }
       } catch {
         // ignore storage errors
@@ -48,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setApiToken(data.token);
     setToken(data.token);
     setUsuario(data.usuario);
+    setDiagnosticoFeito(data.usuario.diagnosticoFeito ?? false);
   }, []);
 
   const registrar = useCallback(async (nome: string, email: string, senha: string) => {
@@ -57,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setApiToken(data.token);
     setToken(data.token);
     setUsuario(data.usuario);
+    setDiagnosticoFeito(data.usuario.diagnosticoFeito ?? false);
   }, []);
 
   const logout = useCallback(async () => {
@@ -66,6 +73,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setApiToken(null);
     setToken(null);
     setUsuario(null);
+    setDiagnosticoFeito(false);
+  }, []);
+
+  const marcarDiagnosticoFeito = useCallback(() => {
+    setDiagnosticoFeito(true);
   }, []);
 
   // Registra o handler de sessão inválida sempre que logout mudar
@@ -80,6 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       usuario,
       isLoggedIn: !!token,
       isLoading,
+      diagnosticoFeito,
+      marcarDiagnosticoFeito,
       login,
       registrar,
       logout,

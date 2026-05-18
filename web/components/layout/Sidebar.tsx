@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, Activity, UtensilsCrossed, BookOpen,
-  Pill, Target, BarChart2, Lightbulb, Bell, Settings,
-  Heart, LogOut, Menu, X, HelpCircle, Moon, Droplets, Dumbbell,
+  Pill, Target, BarChart2, Lightbulb, Bell,
+  Heart, LogOut, Menu, X, HelpCircle, Moon, Droplets, Dumbbell, ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { clearSession, getSavedUser } from "@/lib/api";
 
 const navGroups = [
   {
@@ -40,13 +41,18 @@ const navGroups = [
   {
     section: "SISTEMA",
     items: [
+      { label: "Diagnósticos", href: "/diagnosis", icon: ShieldCheck },
       { label: "Relatórios", href: "/reports", icon: BarChart2 },
     ],
   },
 ];
 
-function SidebarContent({ onClose }: { onClose?: () => void }) {
+function SidebarContent({ onClose, onLogout }: { onClose?: () => void; onLogout: () => void }) {
   const pathname = usePathname();
+  const user = getSavedUser();
+  const initials = user?.nome
+    ? user.nome.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+    : "AD";
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -107,19 +113,22 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
       {/* User footer */}
       <div className="px-3 pb-4 pt-3 border-t border-[#E5E7EB] shrink-0">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#F3F4F6] cursor-pointer transition-colors group">
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#FEE2E2] cursor-pointer transition-colors group"
+        >
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
             style={{ background: "linear-gradient(135deg, #4CAF82, #2E9E6B)" }}
           >
-            <span className="text-white text-xs font-bold">AD</span>
+            <span className="text-white text-xs font-bold">{initials}</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[#1A2332] truncate">Admin</p>
-            <p className="text-xs text-[#6B7280] truncate">admin@diabetescare.com</p>
+          <div className="flex-1 min-w-0 text-left">
+            <p className="text-sm font-semibold text-[#1A2332] truncate">{user?.nome ?? "Admin"}</p>
+            <p className="text-xs text-[#6B7280] truncate">{user?.email ?? ""}</p>
           </div>
           <LogOut size={15} className="text-[#9CA3AF] group-hover:text-[#EF4444] transition-colors shrink-0" />
-        </div>
+        </button>
       </div>
     </div>
   );
@@ -127,6 +136,12 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = () => {
+    clearSession();
+    router.replace("/login");
+  };
 
   return (
     <>
@@ -154,12 +169,12 @@ export default function Sidebar() {
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <SidebarContent onClose={() => setOpen(false)} />
+        <SidebarContent onClose={() => setOpen(false)} onLogout={handleLogout} />
       </aside>
 
       {/* Sidebar desktop */}
       <aside className="hidden lg:flex w-64 shrink-0 bg-white border-r border-[#E5E7EB] h-screen sticky top-0 flex-col">
-        <SidebarContent />
+        <SidebarContent onLogout={handleLogout} />
       </aside>
     </>
   );

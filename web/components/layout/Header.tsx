@@ -13,6 +13,7 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
   "/goals": { title: "Metas", subtitle: "Objetivos de saúde" },
   "/tips": { title: "Dicas & Artigos", subtitle: "Gerenciar conteúdo educativo" },
   "/notifications": { title: "Notificações", subtitle: "Central de notificações" },
+  "/diagnosis": { title: "Diagnósticos", subtitle: "Pré-diagnósticos e resultados ML" },
   "/reports": { title: "Relatórios", subtitle: "Análises e métricas do sistema" },
 };
 

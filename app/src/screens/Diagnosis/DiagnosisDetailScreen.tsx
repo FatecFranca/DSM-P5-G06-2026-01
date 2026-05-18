@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ShieldCheck, AlertTriangle, AlertCircle, Phone, CheckCircle2 } from 'lucide-react-native';
@@ -54,10 +54,10 @@ const RECOMMENDATIONS: Record<string, { title: string; items: string[]; icon: Re
 };
 
 export default function DiagnosisDetailScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const route = useRoute<Route>();
-  const { result } = route.params;
-  const { riskLevel, score, percentage } = result;
+  const { result, isFromOnboarding } = route.params;
+  const { riskLevel, score, percentage, predicao, probabilidade } = result;
 
   const riskColor = getRiskColor(riskLevel);
   const rec = RECOMMENDATIONS[riskLevel];
@@ -67,23 +67,65 @@ export default function DiagnosisDetailScreen() {
     high: ['#EF4444', '#DC2626'],
   };
 
+  const isDiabetico = predicao === 1;
+  const probPct = probabilidade !== undefined ? Math.round(probabilidade * 100) : undefined;
+
+  const predicaoGradient: [string, string] = isDiabetico
+    ? ['#EF4444', '#B91C1C']
+    : ['#4CAF82', '#2E9E6B'];
+
+  const handleIrInicio = () => {
+    navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <ScreenHeader title="Resultado" subtitle="Pré-diagnóstico" />
+      {!isFromOnboarding && <ScreenHeader title="Resultado" subtitle="Pré-diagnóstico" />}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
 
-        {/* Result banner */}
-        <LinearGradient colors={gradients[riskLevel]} style={styles.banner}>
+        {/* Risk score banner */}
+        <LinearGradient colors={gradients[riskLevel]} style={[styles.banner, isFromOnboarding && { marginTop: 52 }]}>
           <View style={styles.scoreCircle}>
             <Text style={styles.scoreValue}>{percentage}%</Text>
             <Text style={styles.scoreLabel}>de risco</Text>
           </View>
           <Text style={styles.riskLabel}>{getRiskLabel(riskLevel)}</Text>
           <Text style={styles.riskSub}>{rec.title}</Text>
-          <Text style={styles.scoreDetail}>Pontuação: {score} / {result.score + (30 - result.score)}</Text>
         </LinearGradient>
 
         <View style={styles.content}>
+
+          {/* ─── Resultado do algoritmo Python ─── */}
+          {predicao !== undefined && (
+            <View style={styles.predicaoWrap}>
+              <Text style={styles.predicaoHeader}>Resultado do Algoritmo</Text>
+              <LinearGradient colors={predicaoGradient} style={styles.predicaoCard}>
+                <View style={styles.predicaoIconRow}>
+                  {isDiabetico
+                    ? <AlertCircle size={40} color="#fff" />
+                    : <CheckCircle2 size={40} color="#fff" />}
+                </View>
+                <Text style={styles.predicaoTitle}>
+                  {isDiabetico ? 'Indicativo de Diabetes' : 'Sem Indicativo de Diabetes'}
+                </Text>
+                <Text style={styles.predicaoSubtitle}>
+                  {isDiabetico
+                    ? 'O modelo identificou padrões associados ao diabetes. Consulte um médico para confirmar.'
+                    : 'O modelo não identificou padrões associados ao diabetes. Continue com hábitos saudáveis.'}
+                </Text>
+                {probPct !== undefined && (
+                  <View style={styles.probRow}>
+                    <Text style={styles.probLabel}>Probabilidade estimada:</Text>
+                    <Text style={styles.probValue}>{probPct}%</Text>
+                  </View>
+                )}
+              </LinearGradient>
+              <Text style={styles.predicaoDisclaimer}>
+                Baseado no algoritmo de Machine Learning treinado com o Pima Indians Diabetes Dataset.
+              </Text>
+            </View>
+          )}
+
           {/* Disclaimer */}
           <View style={styles.disclaimerBox}>
             <Text style={styles.disclaimerText}>
@@ -120,7 +162,7 @@ export default function DiagnosisDetailScreen() {
             </Card>
           )}
 
-          {/* What is diabetes info */}
+          {/* Saiba mais */}
           <Card style={styles.infoCard}>
             <Text style={styles.infoTitle}>💡 Saiba mais</Text>
             <Text style={styles.infoText}>
@@ -128,15 +170,17 @@ export default function DiagnosisDetailScreen() {
             </Text>
           </Card>
 
-          <Button
-            title="Refazer Questionário"
-            onPress={() => navigation.goBack()}
-            variant="outline"
-            style={{ marginTop: Spacing.sm }}
-          />
+          {!isFromOnboarding && (
+            <Button
+              title="Refazer Questionário"
+              onPress={() => navigation.goBack()}
+              variant="outline"
+              style={{ marginTop: Spacing.sm }}
+            />
+          )}
           <Button
             title="Ir ao Início"
-            onPress={() => (navigation as any).navigate('Main')}
+            onPress={handleIrInicio}
             style={{ marginTop: Spacing.sm }}
           />
         </View>
@@ -160,8 +204,40 @@ const styles = StyleSheet.create({
   scoreLabel: { fontSize: FontSize.xs, color: 'rgba(255,255,255,0.85)' },
   riskLabel: { fontSize: FontSize.xxl, fontWeight: FontWeight.extrabold, color: '#fff' },
   riskSub: { fontSize: FontSize.sm, color: 'rgba(255,255,255,0.9)', textAlign: 'center' },
-  scoreDetail: { fontSize: FontSize.xs, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
   content: { paddingHorizontal: Spacing.lg, gap: Spacing.lg },
+
+  // Predição
+  predicaoWrap: { gap: 8 },
+  predicaoHeader: {
+    fontSize: FontSize.xs, fontWeight: FontWeight.bold,
+    color: Colors.textSecondary, letterSpacing: 1, textTransform: 'uppercase',
+  },
+  predicaoCard: {
+    borderRadius: BorderRadius.xl, padding: Spacing.xl,
+    alignItems: 'center', gap: 10,
+  },
+  predicaoIconRow: { marginBottom: 4 },
+  predicaoTitle: {
+    fontSize: FontSize.xl, fontWeight: FontWeight.extrabold,
+    color: '#fff', textAlign: 'center',
+  },
+  predicaoSubtitle: {
+    fontSize: FontSize.sm, color: 'rgba(255,255,255,0.9)',
+    textAlign: 'center', lineHeight: 20,
+  },
+  probRow: {
+    flexDirection: 'row', gap: 8, alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 16, paddingVertical: 8,
+    borderRadius: BorderRadius.full, marginTop: 4,
+  },
+  probLabel: { fontSize: FontSize.sm, color: 'rgba(255,255,255,0.9)' },
+  probValue: { fontSize: FontSize.md, fontWeight: FontWeight.extrabold, color: '#fff' },
+  predicaoDisclaimer: {
+    fontSize: FontSize.xs, color: Colors.textLight,
+    textAlign: 'center', lineHeight: 16,
+  },
+
   disclaimerBox: {
     backgroundColor: Colors.warningLight, borderRadius: BorderRadius.md,
     padding: Spacing.md, borderWidth: 1, borderColor: Colors.warning + '40',

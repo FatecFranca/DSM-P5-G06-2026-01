@@ -13,6 +13,7 @@ import medicacaoRoutes from './medicacaoRoutes';
 import exercicioRoutes from './exercicioRoutes';
 import notificacaoRoutes from './notificacaoRoutes';
 import refeicaoRoutes from './refeicaoRoutes';
+import diagnosticoRoutes from './diagnosticoRoutes';
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use('/medicacao', medicacaoRoutes);
 router.use('/exercicios', exercicioRoutes);
 router.use('/notificacoes', notificacaoRoutes);
 router.use('/refeicao', refeicaoRoutes);
+router.use('/diagnostico', diagnosticoRoutes);
 
 export default router;

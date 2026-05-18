@@ -17,6 +17,7 @@ export interface ApiUsuario {
   glicoseAlvoMax?: number;
   nomeMedico?: string;
   ultimaConsulta?: string;
+  diagnosticoFeito?: boolean;
   criadoEm: string;
 }
 
@@ -1106,6 +1107,35 @@ export async function apiTendenciaGlicose(dataInicio?: string, dataFim?: string)
 export async function apiEstatisticasSono() {
   const res = await apiReq<{ success: boolean; data: ApiEstatisticasSono }>(
     '/sono/estatisticas'
+  );
+  return res.data;
+}
+
+// ─── Diagnóstico ──────────────────────────────────────────────────────────────
+
+export interface ApiDiagnostico {
+  id: string;
+  usuarioId: string;
+  respostas: Record<string, number>;
+  pontuacao: number;
+  nivelRisco: string;
+  percentual: number;
+  predicao: number;
+  probabilidade: number;
+  criadoEm: string;
+}
+
+export async function apiSalvarDiagnostico(respostas: Record<string, number>) {
+  const res = await apiReq<{ success: boolean; data: ApiDiagnostico }>(
+    '/diagnostico',
+    { method: 'POST', body: JSON.stringify({ respostas }) }
+  );
+  return res.data;
+}
+
+export async function apiMeuDiagnostico() {
+  const res = await apiReq<{ success: boolean; data: ApiDiagnostico | null }>(
+    '/diagnostico/meu'
   );
   return res.data;
 }

@@ -1,27 +1,36 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ShieldCheck, ChevronRight, AlertTriangle, Info } from 'lucide-react-native';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '../../theme';
+import { ShieldCheck, AlertTriangle } from 'lucide-react-native';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../theme';
 import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { Button } from '../../components/common/Button';
 import { ProgressBar } from '../../components/common/ProgressBar';
 import { DIAGNOSIS_QUESTIONS, getRiskLevel } from '../../data/diagnosisData';
 import { RootStackParamList, DiagnosisResult } from '../../types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { apiSalvarDiagnostico } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function DiagnosisScreen() {
   const navigation = useNavigation<Nav>();
+  const route = useRoute<any>();
   const insets = useSafeAreaInsets();
+  const { marcarDiagnosticoFeito } = useAuth();
+
+  // Modo obrigatório: quando vem do onboarding (rota DiagnosisOnboarding)
+  const isObrigatorio = route.name === 'DiagnosisOnboarding';
+
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [salvando, setSalvando] = useState(false);
 
   const question = DIAGNOSIS_QUESTIONS[step];
   const maxScore  = DIAGNOSIS_QUESTIONS.length * 3;
@@ -32,21 +41,40 @@ export default function DiagnosisScreen() {
     setAnswers(prev => ({ ...prev, [question.id]: value }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step < DIAGNOSIS_QUESTIONS.length - 1) {
       setStep(prev => prev + 1);
-    } else {
-      // finish
-      const score = Object.values(answers).reduce((s, v) => s + v, 0);
-      const riskLevel = getRiskLevel(score, maxScore);
-      const result: DiagnosisResult = {
-        score,
-        riskLevel,
-        percentage: Math.round((score / maxScore) * 100),
-        answers,
-      };
-      navigation.navigate('DiagnosisDetail', { result });
+      return;
     }
+
+    const score = Object.values(answers).reduce((s, v) => s + v, 0);
+    const riskLevel = getRiskLevel(score, maxScore);
+
+    setSalvando(true);
+    let predicao: number | undefined;
+    let probabilidade: number | undefined;
+    try {
+      const apiResult = await apiSalvarDiagnostico(answers);
+      predicao = apiResult.predicao;
+      probabilidade = apiResult.probabilidade;
+    } catch {
+      // fallback sem dados do Python
+    } finally {
+      setSalvando(false);
+    }
+
+    marcarDiagnosticoFeito();
+
+    const result: DiagnosisResult = {
+      score,
+      riskLevel,
+      percentage: Math.round((score / maxScore) * 100),
+      answers,
+      predicao,
+      probabilidade,
+    };
+
+    navigation.navigate('DiagnosisDetail', { result, isFromOnboarding: isObrigatorio });
   };
 
   const handlePrev = () => {
@@ -56,15 +84,29 @@ export default function DiagnosisScreen() {
   if (!started) {
     return (
       <View style={{ flex: 1, backgroundColor: Colors.background }}>
-        <ScreenHeader title="Pré-Diagnóstico" showBack={true} />
+        {!isObrigatorio && <ScreenHeader title="Pré-Diagnóstico" showBack={true} />}
         <ScrollView contentContainerStyle={styles.introContainer}>
-          <LinearGradient colors={['#4CAF82', '#2E9E6B']} style={styles.introBanner}>
+          <LinearGradient colors={['#4CAF82', '#2E9E6B']} style={[styles.introBanner, isObrigatorio && { marginTop: insets.top + 20 }]}>
             <ShieldCheck size={56} color="#fff" />
-            <Text style={styles.introTitle}>Questionário de Risco</Text>
-            <Text style={styles.introSubtitle}>para Diabetes</Text>
+            <Text style={styles.introTitle}>
+              {isObrigatorio ? 'Bem-vindo!' : 'Questionário de Risco'}
+            </Text>
+            <Text style={styles.introSubtitle}>
+              {isObrigatorio
+                ? 'Antes de começar, precisamos conhecer seu perfil de saúde'
+                : 'para Diabetes'}
+            </Text>
           </LinearGradient>
 
           <View style={styles.introContent}>
+            {isObrigatorio && (
+              <View style={styles.obrigatorioBox}>
+                <Text style={styles.obrigatorioText}>
+                  Este questionário é obrigatório e só precisa ser feito uma vez. Suas respostas nos ajudam a personalizar o app para você.
+                </Text>
+              </View>
+            )}
+
             <Text style={styles.introDesc}>
               Este questionário avalia fatores de risco baseados em diretrizes clínicas e ajuda a identificar a necessidade de consultar um profissional de saúde.
             </Text>
@@ -115,9 +157,12 @@ export default function DiagnosisScreen() {
             <Text style={styles.navBtnText}>‹ Anterior</Text>
           </TouchableOpacity>
           <Text style={styles.stepLabel}>{step + 1} / {DIAGNOSIS_QUESTIONS.length}</Text>
-          <TouchableOpacity onPress={() => { setStarted(false); setStep(0); setAnswers({}); }}>
-            <Text style={styles.cancelText}>Cancelar</Text>
-          </TouchableOpacity>
+          {!isObrigatorio && (
+            <TouchableOpacity onPress={() => { setStarted(false); setStep(0); setAnswers({}); }}>
+              <Text style={styles.cancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          )}
+          {isObrigatorio && <View style={{ width: 60 }} />}
         </View>
         <ProgressBar progress={progress} color={Colors.primary} height={6} />
         <Text style={styles.categoryLabel}>{question.category}</Text>
@@ -146,9 +191,9 @@ export default function DiagnosisScreen() {
         </View>
 
         <Button
-          title={step === DIAGNOSIS_QUESTIONS.length - 1 ? 'Ver Resultado' : 'Próxima'}
+          title={salvando ? 'Salvando...' : step === DIAGNOSIS_QUESTIONS.length - 1 ? (isObrigatorio ? 'Concluir' : 'Ver Resultado') : 'Próxima'}
           onPress={handleNext}
-          disabled={!answered}
+          disabled={!answered || salvando}
           style={{ marginTop: Spacing.xl }}
         />
       </ScrollView>
@@ -161,6 +206,19 @@ const styles = StyleSheet.create({
   introBanner: {
     margin: Spacing.lg, borderRadius: BorderRadius.xl,
     padding: 36, alignItems: 'center', gap: 8,
+  },
+  obrigatorioBox: {
+    backgroundColor: Colors.primaryLight,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.primary + '40',
+  },
+  obrigatorioText: {
+    fontSize: FontSize.sm,
+    color: Colors.text,
+    lineHeight: 20,
+    textAlign: 'center',
   },
   introTitle: { fontSize: FontSize.xxl, fontWeight: FontWeight.extrabold, color: '#fff' },
   introSubtitle: { fontSize: FontSize.md, color: 'rgba(255,255,255,0.85)' },

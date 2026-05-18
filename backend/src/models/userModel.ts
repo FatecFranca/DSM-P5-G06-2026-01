@@ -38,6 +38,7 @@ const CAMPOS_PUBLICOS = {
   ultimaConsulta: true,
   status: true,
   perfil: true,
+  diagnosticoFeito: true,
   criadoEm: true,
   atualizadoEm: true,
 } as const;
@@ -61,6 +62,7 @@ export const userModel = {
         tipoDiabetes: true,
         status: true,
         perfil: true,
+        diagnosticoFeito: true,
         criadoEm: true,
       },
     });

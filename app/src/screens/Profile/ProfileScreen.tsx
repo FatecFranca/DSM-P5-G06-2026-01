@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
 } from 'react-native';
@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   User, Edit3, Heart, Calendar, Weight, Ruler,
   Stethoscope, TrendingUp, Activity, ArrowLeft,
+  ShieldCheck, CheckCircle2, AlertCircle,
 } from 'lucide-react-native';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '../../theme';
 import { useApp } from '../../context/AppContext';
@@ -15,7 +16,8 @@ import { Card } from '../../components/common/Card';
 import { GlucoseChart } from '../../components/charts/GlucoseChart';
 import { RootStackParamList } from '../../types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getGlucoseAverage } from '../../utils/helpers';
+import { getGlucoseAverage, getRiskLabel, getRiskColor } from '../../utils/helpers';
+import { apiMeuDiagnostico, ApiDiagnostico } from '../../services/api';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -31,6 +33,11 @@ export default function ProfileScreen() {
   const { user, glucoseReadings } = useApp();
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
+  const [diagnostico, setDiagnostico] = useState<ApiDiagnostico | null>(null);
+
+  useEffect(() => {
+    apiMeuDiagnostico().then(d => setDiagnostico(d)).catch(() => {});
+  }, []);
 
   const bmi = (user.weight / ((user.height / 100) ** 2)).toFixed(1);
   const bmiStatus = parseFloat(bmi) < 18.5 ? 'Abaixo do peso' : parseFloat(bmi) < 25 ? 'Normal' : parseFloat(bmi) < 30 ? 'Sobrepeso' : 'Obesidade';
@@ -92,6 +99,46 @@ export default function ProfileScreen() {
             <Edit3 size={16} color={Colors.primary} />
             <Text style={styles.editBtnText}>Editar Perfil</Text>
           </TouchableOpacity>
+
+          {/* Diagnóstico */}
+          {diagnostico && (
+            <Card style={styles.diagCard}>
+              <View style={styles.sectionHeader}>
+                <ShieldCheck size={18} color={Colors.primary} />
+                <Text style={styles.sectionTitle}>Pré-Diagnóstico</Text>
+              </View>
+
+              {/* Resultado ML */}
+              <View style={[
+                styles.diagResultRow,
+                { backgroundColor: diagnostico.predicao === 1 ? '#FEE2E2' : '#E8F5EE' },
+              ]}>
+                {diagnostico.predicao === 1
+                  ? <AlertCircle size={22} color={Colors.danger} />
+                  : <CheckCircle2 size={22} color={Colors.primary} />}
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.diagResultLabel, { color: diagnostico.predicao === 1 ? Colors.danger : Colors.primary }]}>
+                    {diagnostico.predicao === 1 ? 'Indicativo de Diabetes' : 'Sem Indicativo de Diabetes'}
+                  </Text>
+                  <Text style={styles.diagResultSub}>
+                    Probabilidade estimada: {Math.round(diagnostico.probabilidade * 100)}%
+                  </Text>
+                </View>
+              </View>
+
+              {/* Nível de risco */}
+              <View style={styles.diagInfoRow}>
+                <Text style={styles.diagInfoLabel}>Nível de risco</Text>
+                <Text style={[styles.diagInfoValue, { color: getRiskColor(diagnostico.nivelRisco as any) }]}>
+                  {getRiskLabel(diagnostico.nivelRisco as any)}
+                </Text>
+              </View>
+              <View style={[styles.diagInfoRow, { borderBottomWidth: 0 }]}>
+                <Text style={styles.diagInfoLabel}>Pontuação</Text>
+                <Text style={styles.diagInfoValue}>{diagnostico.pontuacao} / 24</Text>
+              </View>
+            </Card>
+          )}
 
           {/* Stats */}
           <Card style={styles.statsCard}>
@@ -207,6 +254,19 @@ const styles = StyleSheet.create({
   infoIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' },
   infoLabel: { flex: 1, fontSize: FontSize.sm, color: Colors.textSecondary },
   infoValue: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: Colors.text, textAlign: 'right', maxWidth: 160 },
+  diagCard: {},
+  diagResultRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    borderRadius: BorderRadius.md, padding: Spacing.md, marginBottom: Spacing.md,
+  },
+  diagResultLabel: { fontSize: FontSize.md, fontWeight: FontWeight.bold },
+  diagResultSub: { fontSize: FontSize.xs, color: Colors.textSecondary, marginTop: 2 },
+  diagInfoRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.borderLight,
+  },
+  diagInfoLabel: { fontSize: FontSize.sm, color: Colors.textSecondary },
+  diagInfoValue: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: Colors.text },
   targetCard: {},
   targetRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   targetItem: { flex: 1, alignItems: 'center', padding: 14, borderRadius: BorderRadius.md },

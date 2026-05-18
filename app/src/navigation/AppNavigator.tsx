@@ -41,7 +41,7 @@ const Stack = createNativeStackNavigator<any>();
 
 export default function AppNavigator() {
   const { onboarded } = useApp();
-  const { isLoggedIn, isLoading } = useAuth();
+  const { isLoggedIn, isLoading, diagnosticoFeito } = useAuth();
 
   if (isLoading) {
     return (
@@ -65,6 +65,13 @@ export default function AppNavigator() {
           <>
             {!onboarded && (
               <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+            )}
+            {onboarded && !diagnosticoFeito && (
+              <Stack.Screen
+                name="DiagnosisOnboarding"
+                component={DiagnosisScreen}
+                options={{ gestureEnabled: false }}
+              />
             )}
             <Stack.Screen name="Main" component={TabNavigator} />
             <Stack.Screen name="AddGlucose" component={AddGlucoseScreen} options={{ animation: 'slide_from_bottom' }} />

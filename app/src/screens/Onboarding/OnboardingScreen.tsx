@@ -61,13 +61,13 @@ export default function OnboardingScreen() {
       setCurrentIndex(prev => prev + 1);
     } else {
       completeOnboarding();
-      navigation.replace('Main');
+      navigation.replace('DiagnosisOnboarding' as any);
     }
   };
 
   const handleSkip = () => {
     completeOnboarding();
-    navigation.replace('Main');
+    navigation.replace('DiagnosisOnboarding' as any);
   };
 
   return (
