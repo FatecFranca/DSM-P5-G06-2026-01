@@ -2,6 +2,7 @@ import path from 'path';
 import { spawn } from 'child_process';
 import { Response, NextFunction } from 'express';
 import { diagnosticoModel } from '../models/diagnosticoModel';
+import { userModel } from '../models/userModel';
 import { ApiError } from '../middlewares/errorHandler';
 import { AuthRequest } from '../middlewares/auth';
 
@@ -106,10 +107,15 @@ export const diagnosticoController = {
         probabilidade,
       });
 
+      // Marca o diagnóstico como feito para o usuário
+      const usuarioAtualizado = await userModel.atualizar(usuarioId, {
+        diagnosticoFeito: true as any,
+      });
+
       res.status(201).json({
         success: true,
         message: 'Diagnóstico salvo com sucesso',
-        data: diagnostico,
+        data: { diagnostico, usuario: usuarioAtualizado },
       });
     } catch (error) {
       next(error);

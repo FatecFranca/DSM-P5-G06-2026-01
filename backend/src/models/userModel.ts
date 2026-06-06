@@ -20,6 +20,7 @@ export interface AtualizarUsuarioDto {
   glicoseAlvoMax?: number;
   nomeMedico?: string | null;
   ultimaConsulta?: Date | null;
+  diagnosticoFeito?: boolean;
 }
 
 // ─── Campos públicos (sem senha) ───────────────────────────────────────────────

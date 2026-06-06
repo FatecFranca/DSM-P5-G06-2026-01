@@ -1,5 +1,5 @@
 // ─── Base URL ─────────────────────────────────────────────────────────────────
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = 'http://4.172.210.18:3000/api';  
 
 // ─── API Types ────────────────────────────────────────────────────────────────
 
@@ -1126,7 +1126,7 @@ export interface ApiDiagnostico {
 }
 
 export async function apiSalvarDiagnostico(respostas: Record<string, number>) {
-  const res = await apiReq<{ success: boolean; data: ApiDiagnostico }>(
+  const res = await apiReq<{ success: boolean; data: { diagnostico: ApiDiagnostico; usuario: ApiUsuario } }>(
     '/diagnostico',
     { method: 'POST', body: JSON.stringify({ respostas }) }
   );

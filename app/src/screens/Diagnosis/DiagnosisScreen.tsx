@@ -22,7 +22,7 @@ export default function DiagnosisScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<any>();
   const insets = useSafeAreaInsets();
-  const { marcarDiagnosticoFeito } = useAuth();
+  const { atualizarUsuario } = useAuth();
 
   // Modo obrigatório: quando vem do onboarding (rota DiagnosisOnboarding)
   const isObrigatorio = route.name === 'DiagnosisOnboarding';
@@ -55,15 +55,16 @@ export default function DiagnosisScreen() {
     let probabilidade: number | undefined;
     try {
       const apiResult = await apiSalvarDiagnostico(answers);
-      predicao = apiResult.predicao;
-      probabilidade = apiResult.probabilidade;
+      predicao = apiResult.diagnostico.predicao;
+      probabilidade = apiResult.diagnostico.probabilidade;
+      
+      // Atualizar o usuário com os dados retornados da API
+      await atualizarUsuario(apiResult.usuario);
     } catch {
       // fallback sem dados do Python
     } finally {
       setSalvando(false);
     }
-
-    marcarDiagnosticoFeito();
 
     const result: DiagnosisResult = {
       score,

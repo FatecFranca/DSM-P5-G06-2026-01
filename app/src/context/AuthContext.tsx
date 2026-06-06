@@ -12,6 +12,7 @@ interface AuthContextType {
   isLoading: boolean;
   diagnosticoFeito: boolean;
   marcarDiagnosticoFeito: () => void;
+  atualizarUsuario: (usuarioAtualizado: ApiUsuario) => Promise<void>;
   login: (email: string, senha: string) => Promise<void>;
   registrar: (nome: string, email: string, senha: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -80,6 +81,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setDiagnosticoFeito(true);
   }, []);
 
+  const atualizarUsuario = useCallback(async (usuarioAtualizado: ApiUsuario) => {
+    setUsuario(usuarioAtualizado);
+    setDiagnosticoFeito(usuarioAtualizado.diagnosticoFeito ?? false);
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(usuarioAtualizado));
+  }, []);
+
   // Registra o handler de sessão inválida sempre que logout mudar
   useEffect(() => {
     setUnauthorizedHandler(logout);
@@ -94,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       diagnosticoFeito,
       marcarDiagnosticoFeito,
+      atualizarUsuario,
       login,
       registrar,
       logout,
